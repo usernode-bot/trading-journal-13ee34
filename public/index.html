@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="id" class="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -93,106 +93,546 @@
   <script src="/usernode-bridge/v1/bridge.js"></script>
 </head>
 <body class="bg-zinc-950 text-zinc-100 min-h-screen">
-  <main class="max-w-md mx-auto px-4 py-10 flex flex-col gap-6">
+  <main class="max-w-5xl mx-auto px-4 py-6 flex flex-col gap-6">
     <header class="flex items-center gap-3 px-1">
       <img src="/logo.svg" alt="" class="w-9 h-9 shrink-0" width="36" height="36">
       <span class="text-lg font-semibold tracking-tight">Trading journal</span>
     </header>
 
-    <!-- usernode-starter-notice@1 — starter-template messaging. When building
-         the user's real app, replace this whole screen and delete this block,
-         both sentinel comments included. -->
-    <section class="rounded-2xl border border-violet-500/30 bg-gradient-to-b from-violet-600/20 to-transparent p-6 text-center flex flex-col items-center gap-3">
-      <span class="inline-block rounded-full bg-violet-600/20 text-violet-300 text-xs font-semibold uppercase tracking-wide px-3 py-1">Starter template</span>
-      <h1 class="text-2xl font-bold">Trading journal</h1>
-      <p class="text-sm text-zinc-300 leading-relaxed">Welcome to your new app! Everything on this screen is placeholder content that came with it.</p>
-      <p class="text-sm text-zinc-300 leading-relaxed">Tap the <strong class="text-violet-300 font-semibold">Homeroom icon</strong> in the header and choose <strong class="text-violet-300 font-semibold">Start a new change</strong> to start building your app. Describe what you'd like in plain English, and it will be turned into your real app.</p>
-    </section>
-
-    <section>
-      <h2 class="text-sm font-medium text-zinc-500 mb-2 px-1">What's already working</h2>
-      <div class="rounded-xl border border-zinc-800 bg-zinc-900/60 divide-y divide-zinc-800">
-        <div class="flex items-start gap-3 p-4">
-          <svg class="w-5 h-5 text-violet-400 shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M16.7 5.3a1 1 0 0 1 0 1.4l-7 7a1 1 0 0 1-1.4 0l-3-3a1 1 0 1 1 1.4-1.4L9 11.6l6.3-6.3a1 1 0 0 1 1.4 0Z" clip-rule="evenodd"/></svg>
-          <div>
-            <p class="text-sm font-semibold text-zinc-100">Sign-in</p>
-            <p class="text-sm text-zinc-400">You're signed in through Homeroom automatically — no accounts to build.</p>
-          </div>
-        </div>
-        <div class="flex items-start gap-3 p-4">
-          <svg class="w-5 h-5 text-violet-400 shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M16.7 5.3a1 1 0 0 1 0 1.4l-7 7a1 1 0 0 1-1.4 0l-3-3a1 1 0 1 1 1.4-1.4L9 11.6l6.3-6.3a1 1 0 0 1 1.4 0Z" clip-rule="evenodd"/></svg>
-          <div>
-            <p class="text-sm font-semibold text-zinc-100">Database</p>
-            <p class="text-sm text-zinc-400">Your app has its own private database, ready to store things.</p>
-          </div>
-        </div>
-        <div class="flex items-start gap-3 p-4">
-          <svg class="w-5 h-5 text-violet-400 shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M16.7 5.3a1 1 0 0 1 0 1.4l-7 7a1 1 0 0 1-1.4 0l-3-3a1 1 0 1 1 1.4-1.4L9 11.6l6.3-6.3a1 1 0 0 1 1.4 0Z" clip-rule="evenodd"/></svg>
-          <div>
-            <p class="text-sm font-semibold text-zinc-100">Live API</p>
-            <p class="text-sm text-zinc-400">The example below talks to a real server — try it.</p>
-          </div>
-        </div>
+    <!-- Daftar trade -->
+    <section id="list-view" class="flex flex-col gap-4">
+      <div class="flex items-center justify-between gap-3 px-1">
+        <h1 class="text-xl font-bold">Jurnal trading</h1>
+        <button type="button" id="new-trade-btn" class="rounded-lg bg-violet-600 hover:bg-violet-500 px-4 py-2 text-sm font-semibold text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-400">Catat trade</button>
       </div>
-    </section>
-    <!-- /usernode-starter-notice@1 -->
+      <p id="demo-note" class="hidden px-1 text-sm text-amber-300">Contoh data staging. Trade ini tidak tersimpan dan tidak bisa diubah.</p>
+      <p class="px-1 text-xs text-zinc-500">Disiplin: ✅ jika risiko maksimal 1% modal dan RR rencana minimal 1:2. ❌ jika salah satunya dilanggar. Risiko bertanda * dihitung otomatis (perkiraan).</p>
 
-    <section class="rounded-xl border border-zinc-800 bg-zinc-900/60 p-5 flex flex-col items-center gap-5">
-      <div class="w-full flex items-baseline justify-between gap-2">
-        <h2 class="text-sm font-medium text-zinc-500">Try the example</h2>
-        <span class="text-xs text-zinc-600">This example will be replaced</span>
+      <section id="summary" class="hidden rounded-xl border border-zinc-800 p-4 flex flex-col gap-3" aria-labelledby="summary-title">
+        <h2 id="summary-title" class="text-sm font-semibold text-zinc-400">Ringkasan</h2>
+        <dl class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-x-4 gap-y-3">
+          <div><dt class="text-xs text-zinc-500">Total trade</dt><dd id="sum-total" class="font-mono text-lg">-</dd></div>
+          <div><dt class="text-xs text-zinc-500">Win rate</dt><dd id="sum-winrate" class="font-mono text-lg">-</dd><dd id="sum-winrate-sub" class="text-xs text-zinc-500"></dd></div>
+          <div><dt class="text-xs text-zinc-500">Total R</dt><dd id="sum-total-r" class="font-mono text-lg">-</dd></div>
+          <div><dt class="text-xs text-zinc-500">Rata-rata R</dt><dd id="sum-avg-r" class="font-mono text-lg">-</dd><dd id="sum-r-sub" class="text-xs text-zinc-500"></dd></div>
+          <div class="col-span-2 sm:col-span-1"><dt class="text-xs text-zinc-500">Max drawdown</dt><dd id="sum-dd" class="font-mono text-lg">-</dd><dd id="sum-dd-sub" class="text-xs text-zinc-500"></dd></div>
+        </dl>
+        <p id="sum-excluded" class="hidden text-xs text-zinc-500"></p>
+      </section>
+
+      <div id="list-loading" class="px-1 py-10 text-center text-sm text-zinc-400">Memuat trade...</div>
+
+      <div id="list-error" class="hidden rounded-xl border border-red-500/40 bg-red-500/10 p-4 text-sm">
+        <p class="text-red-300">Gagal memuat trade. Periksa koneksi lalu coba lagi.</p>
+        <button type="button" id="retry-btn" class="mt-3 rounded-lg border border-zinc-700 px-3 py-1.5 text-zinc-100 hover:bg-zinc-800">Coba lagi</button>
       </div>
 
-      <button id="press-btn" class="w-32 h-32 rounded-full bg-violet-600 hover:bg-violet-500 active:scale-95 transition-all text-white text-xl font-bold shadow-lg shadow-violet-600/30">
-        Press!
-      </button>
+      <div id="list-empty" class="hidden flex flex-col items-center gap-3 rounded-xl border border-zinc-800 p-8 text-center">
+        <p class="font-semibold">Belum ada trade</p>
+        <p class="text-sm text-zinc-400">Catat trade pertamamu untuk melihat risiko, RR dan cek disiplin otomatis.</p>
+        <button type="button" id="empty-new-btn" class="rounded-lg bg-violet-600 hover:bg-violet-500 px-4 py-2 text-sm font-semibold text-white">Catat trade pertama</button>
+      </div>
 
-      <div id="count" class="text-lg text-zinc-400">0 total presses</div>
+      <!-- Ponsel: daftar -->
+      <ul id="trade-list" class="hidden md:hidden divide-y divide-zinc-800 rounded-xl border border-zinc-800"></ul>
 
-      <div class="w-full max-w-sm">
-        <h3 class="text-sm font-medium text-zinc-500 mb-2 text-center">Leaderboard</h3>
-        <div id="leaderboard" class="space-y-1"></div>
+      <!-- Desktop: tabel -->
+      <div id="trade-table-wrap" class="hidden overflow-x-auto rounded-xl border border-zinc-800">
+        <table class="min-w-full text-sm">
+          <thead class="bg-zinc-900 text-left text-xs text-zinc-400">
+            <tr>
+              <th class="px-3 py-2 font-medium">Tanggal</th>
+              <th class="px-3 py-2 font-medium">Instrumen</th>
+              <th class="px-3 py-2 font-medium">Posisi</th>
+              <th class="px-3 py-2 font-medium text-right">Entry</th>
+              <th class="px-3 py-2 font-medium text-right">SL</th>
+              <th class="px-3 py-2 font-medium text-right">TP</th>
+              <th class="px-3 py-2 font-medium text-right">Exit</th>
+              <th class="px-3 py-2 font-medium text-right">Risiko</th>
+              <th class="px-3 py-2 font-medium text-right">RR rencana</th>
+              <th class="px-3 py-2 font-medium text-right">RR aktual</th>
+              <th class="px-3 py-2 font-medium text-right">Hasil</th>
+              <th class="px-3 py-2 font-medium text-center">Disiplin</th>
+            </tr>
+          </thead>
+          <tbody id="trade-tbody" class="divide-y divide-zinc-800"></tbody>
+        </table>
       </div>
     </section>
 
-    <p class="text-center text-xs text-zinc-600">Built on Homeroom — this template screen disappears once you build your real app.</p>
+    <!-- Form trade -->
+    <section id="form-view" class="hidden w-full max-w-2xl mx-auto flex flex-col gap-4">
+      <div class="flex items-center gap-3 px-1">
+        <button type="button" id="back-btn" class="rounded-lg px-2 py-1 text-sm text-violet-300 hover:bg-zinc-800">&larr; Kembali</button>
+        <h1 id="form-title" class="text-xl font-bold">Catat trade</h1>
+      </div>
+
+      <form id="trade-form" class="flex flex-col gap-6" novalidate>
+        <fieldset class="flex flex-col gap-3">
+          <legend class="mb-2 text-sm font-semibold text-zinc-400">Waktu dan instrumen</legend>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <label class="flex flex-col gap-1 text-sm"><span class="text-zinc-300">Tanggal</span>
+              <input name="trade_date" type="date" required class="field"></label>
+            <label class="flex flex-col gap-1 text-sm"><span class="text-zinc-300">Jam entry</span>
+              <input name="entry_time" type="time" class="field"></label>
+            <label class="flex flex-col gap-1 text-sm"><span class="text-zinc-300">Jam exit</span>
+              <input name="exit_time" type="time" class="field"></label>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <label class="flex flex-col gap-1 text-sm"><span class="text-zinc-300">Instrumen</span>
+              <input name="instrument" type="text" required maxlength="40" autocapitalize="characters" placeholder="EURUSD, BBCA, BTC" class="field"></label>
+            <label class="flex flex-col gap-1 text-sm"><span class="text-zinc-300">Kategori</span>
+              <select name="category" class="field">
+                <option value="">Pilih</option>
+                <option value="forex">Forex</option>
+                <option value="saham">Saham</option>
+                <option value="kripto">Kripto</option>
+              </select></label>
+          </div>
+          <div class="flex flex-col gap-1 text-sm">
+            <span class="text-zinc-300">Posisi</span>
+            <div class="grid grid-cols-2 gap-2">
+              <label class="choice"><input type="radio" name="position" value="buy" class="accent-violet-500"> Buy</label>
+              <label class="choice"><input type="radio" name="position" value="sell" class="accent-violet-500"> Sell</label>
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset class="flex flex-col gap-3">
+          <legend class="mb-2 text-sm font-semibold text-zinc-400">Harga dan ukuran</legend>
+          <div class="grid grid-cols-2 gap-3">
+            <label class="flex flex-col gap-1 text-sm"><span class="text-zinc-300">Entry</span>
+              <input name="entry_price" type="text" inputmode="decimal" class="field num"></label>
+            <label class="flex flex-col gap-1 text-sm"><span class="text-zinc-300">Exit</span>
+              <input name="exit_price" type="text" inputmode="decimal" class="field num"></label>
+            <label class="flex flex-col gap-1 text-sm"><span class="text-zinc-300">Stop loss (SL)</span>
+              <input name="stop_loss" type="text" inputmode="decimal" class="field num"></label>
+            <label class="flex flex-col gap-1 text-sm"><span class="text-zinc-300">Take profit (TP)</span>
+              <input name="take_profit" type="text" inputmode="decimal" class="field num"></label>
+            <label class="flex flex-col gap-1 text-sm"><span class="text-zinc-300">Lot / ukuran posisi</span>
+              <input name="lot_size" type="text" inputmode="decimal" class="field num"></label>
+            <label class="flex flex-col gap-1 text-sm"><span class="text-zinc-300">Modal saat ini ($)</span>
+              <input name="capital" type="text" inputmode="decimal" class="field num"></label>
+          </div>
+          <label class="flex flex-col gap-1 text-sm"><span class="text-zinc-300">Risiko ($)</span>
+            <input name="risk_amount" type="text" inputmode="decimal" placeholder="Kosongkan untuk dihitung otomatis" class="field num">
+            <span class="text-xs text-zinc-500">Otomatis: |Entry - SL| x lot x ukuran kontrak (forex 100.000, saham 100 lembar, kripto 1). Hanya perkiraan; isi sendiri jika berbeda.</span></label>
+        </fieldset>
+
+        <fieldset class="flex flex-col gap-3">
+          <legend class="mb-2 text-sm font-semibold text-zinc-400">Analisis</legend>
+          <div class="grid grid-cols-2 gap-3">
+            <label class="flex flex-col gap-1 text-sm"><span class="text-zinc-300">Setup</span>
+              <input name="setup" type="text" maxlength="200" placeholder="Breakout, pullback" class="field"></label>
+            <label class="flex flex-col gap-1 text-sm"><span class="text-zinc-300">Timeframe</span>
+              <input name="timeframe" type="text" maxlength="20" placeholder="M15, H1, D1" class="field"></label>
+          </div>
+          <label class="flex flex-col gap-1 text-sm"><span class="text-zinc-300">Alasan entry</span>
+            <textarea name="entry_reason" rows="3" maxlength="2000" class="field"></textarea></label>
+        </fieldset>
+
+        <fieldset class="flex flex-col gap-3">
+          <legend class="mb-2 text-sm font-semibold text-zinc-400">Psikologi dan evaluasi</legend>
+          <div class="grid grid-cols-2 gap-3">
+            <label class="flex flex-col gap-1 text-sm"><span class="text-zinc-300">Emosi</span>
+              <select name="emotion" class="field">
+                <option value="">Pilih</option>
+                <option value="tenang">Tenang</option>
+                <option value="fomo">FOMO</option>
+                <option value="takut">Takut</option>
+                <option value="serakah">Serakah</option>
+                <option value="balas_dendam">Balas dendam</option>
+                <option value="ragu">Ragu</option>
+                <option value="bosan">Bosan</option>
+              </select></label>
+            <label class="flex flex-col gap-1 text-sm"><span class="text-zinc-300">Sesuai plan?</span>
+              <select name="followed_plan" class="field">
+                <option value="">Pilih</option>
+                <option value="true">Ya</option>
+                <option value="false">Tidak</option>
+              </select></label>
+          </div>
+          <div class="flex flex-col gap-1 text-sm">
+            <span class="text-zinc-300">Kesalahan</span>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <label class="choice"><input type="checkbox" name="mistakes" value="entry_terlalu_cepat" class="accent-violet-500"> Entry terlalu cepat</label>
+              <label class="choice"><input type="checkbox" name="mistakes" value="sl_digeser" class="accent-violet-500"> SL digeser</label>
+              <label class="choice"><input type="checkbox" name="mistakes" value="tp_dipotong" class="accent-violet-500"> TP dipotong</label>
+              <label class="choice"><input type="checkbox" name="mistakes" value="overtrade" class="accent-violet-500"> Overtrade</label>
+              <label class="choice"><input type="checkbox" name="mistakes" value="melanggar_risiko" class="accent-violet-500"> Melanggar risiko</label>
+              <label class="choice"><input type="checkbox" name="mistakes" value="tanpa_setup" class="accent-violet-500"> Tanpa setup</label>
+            </div>
+          </div>
+          <label class="flex flex-col gap-1 text-sm"><span class="text-zinc-300">Pelajaran</span>
+            <textarea name="lesson" rows="3" maxlength="2000" class="field"></textarea></label>
+        </fieldset>
+
+        <fieldset class="flex flex-col gap-3">
+          <legend class="mb-2 text-sm font-semibold text-zinc-400">Hasil</legend>
+          <label class="flex flex-col gap-1 text-sm"><span class="text-zinc-300">Hasil ($)</span>
+            <input name="result_amount" type="text" inputmode="decimal" placeholder="Rugi pakai minus, contoh -25" class="field num"></label>
+        </fieldset>
+
+        <div id="calc-box" class="rounded-xl border border-zinc-800 p-4 flex flex-col gap-3">
+          <div class="flex items-center justify-between gap-2">
+            <h2 class="text-sm font-semibold text-zinc-400">Hitungan otomatis</h2>
+            <span id="calc-badge"></span>
+          </div>
+          <dl class="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
+            <div><dt class="text-zinc-500">Risiko</dt><dd id="calc-risk" class="font-mono">-</dd></div>
+            <div><dt class="text-zinc-500">Risiko % modal</dt><dd id="calc-risk-pct" class="font-mono">-</dd></div>
+            <div><dt class="text-zinc-500">Hasil dalam R</dt><dd id="calc-r" class="font-mono">-</dd></div>
+            <div><dt class="text-zinc-500">RR rencana</dt><dd id="calc-planned-rr" class="font-mono">-</dd></div>
+            <div><dt class="text-zinc-500">RR aktual</dt><dd id="calc-actual-rr" class="font-mono">-</dd></div>
+          </dl>
+          <p id="calc-violations" class="text-sm text-red-300"></p>
+        </div>
+
+        <p id="form-error" class="hidden text-sm text-red-300" role="alert"></p>
+
+        <div class="flex flex-col-reverse sm:flex-row sm:justify-between gap-3">
+          <button type="button" id="delete-btn" class="hidden rounded-lg border border-red-500/50 px-4 py-2 text-sm text-red-300 hover:bg-red-500/10">Hapus trade</button>
+          <button type="submit" id="save-btn" class="sm:ml-auto rounded-lg bg-violet-600 hover:bg-violet-500 px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-400">Simpan trade</button>
+        </div>
+      </form>
+    </section>
   </main>
 
   <script>
     const params = new URLSearchParams(window.location.search);
     const token = params.get('token') || '';
+    const DEMO = params.get('demo') === '1';
     const headers = token ? { 'x-usernode-token': token } : {};
 
-    async function loadLeaderboard() {
-      const res = await fetch('/api/leaderboard', { headers });
-      if (!res.ok) return;
-      const { leaderboard } = await res.json();
-      const el = document.getElementById('leaderboard');
-      if (!leaderboard.length) {
-        el.innerHTML = '<p class="text-center text-zinc-600 text-sm">No presses yet</p>';
-        return;
-      }
-      el.innerHTML = leaderboard.map((r, i) =>
-        '<div class="flex justify-between px-3 py-1 rounded ' + (i === 0 ? 'bg-violet-600/20 text-violet-300' : 'text-zinc-400') + '">' +
-        '<span>' + (i + 1) + '. ' + r.username + '</span>' +
-        '<span class="font-mono">' + r.presses + '</span></div>'
-      ).join('');
-      const total = leaderboard.reduce((s, r) => s + parseInt(r.presses), 0);
-      document.getElementById('count').textContent = total + ' total presses';
+    // Units per 1 lot, used only when risk $ is left empty.
+    const CONTRACT_SIZE = { forex: 100000, saham: 100, kripto: 1 };
+    const EMOTION_LABELS = { tenang: 'Tenang', fomo: 'FOMO', takut: 'Takut', serakah: 'Serakah', balas_dendam: 'Balas dendam', ragu: 'Ragu', bosan: 'Bosan' };
+    const NUMERIC_FIELDS = ['entry_price', 'stop_loss', 'take_profit', 'exit_price', 'lot_size', 'capital', 'risk_amount', 'result_amount'];
+
+    const $ = (id) => document.getElementById(id);
+    const form = $('trade-form');
+    let trades = [];
+    let editingId = null;
+
+    function num(v) {
+      if (v === null || v === undefined) return null;
+      const s = String(v).trim().replace(',', '.');
+      if (s === '') return null;
+      const n = Number(s);
+      return Number.isFinite(n) ? n : null;
     }
 
-    document.getElementById('press-btn').addEventListener('click', async () => {
+    // All derived numbers come from here, for both the list and the form preview.
+    function calc(t) {
+      const entry = num(t.entry_price), sl = num(t.stop_loss), tp = num(t.take_profit), exit = num(t.exit_price);
+      const lot = num(t.lot_size), capital = num(t.capital), result = num(t.result_amount);
+      const slDist = entry !== null && sl !== null && entry !== sl ? Math.abs(entry - sl) : null;
+      let risk = num(t.risk_amount);
+      let riskDerived = false;
+      if (risk === null && slDist !== null && lot !== null && CONTRACT_SIZE[t.category]) {
+        risk = slDist * lot * CONTRACT_SIZE[t.category];
+        riskDerived = true;
+      }
+      const riskPct = risk !== null && capital ? risk / capital * 100 : null;
+      const r = result !== null && risk ? result / risk : null;
+      const plannedRR = slDist !== null && tp !== null ? Math.abs(tp - entry) / slDist : null;
+      const actualRR = slDist !== null && exit !== null ? Math.abs(exit - entry) / slDist : null;
+      const violations = [];
+      if (riskPct !== null && riskPct > 1) violations.push('Risiko ' + fmtNum(riskPct, 2) + '% melebihi 1% modal');
+      if (plannedRR !== null && plannedRR < 2) violations.push('RR rencana 1:' + fmtNum(plannedRR, 2) + ' di bawah 1:2');
+      const status = violations.length ? 'bad' : (riskPct !== null && plannedRR !== null ? 'ok' : 'unknown');
+      return { risk, riskDerived, riskPct, r, plannedRR, actualRR, violations, status, result };
+    }
+
+    function fmtNum(v, max) {
+      return Number(v).toLocaleString('id-ID', { maximumFractionDigits: max === undefined ? 5 : max });
+    }
+    function fmtMoney(v) {
+      if (v === null) return '-';
+      const s = Math.abs(v).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      return (v < 0 ? '-$' : '$') + s;
+    }
+    function fmtR(v) { return v === null ? '-' : (v > 0 ? '+' : '') + fmtNum(v, 2) + 'R'; }
+    function fmtRR(v) { return v === null ? '-' : '1:' + fmtNum(v, 2); }
+    function fmtPct(v) { return v === null ? '-' : fmtNum(v, 2) + '%'; }
+    function fmtPrice(v) { const n = num(v); return n === null ? '-' : fmtNum(n); }
+    function esc(s) {
+      return String(s === null || s === undefined ? '' : s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+    function fmtDate(d) {
+      if (!d) return '-';
+      const [y, m, day] = d.split('-').map(Number);
+      return new Date(y, m - 1, day).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+    }
+
+    function badge(c) {
+      if (c.status === 'bad') return '<span class="inline-flex items-center gap-1 rounded-full bg-red-500/15 px-2 py-0.5 text-xs font-semibold text-red-300" title="' + esc(c.violations.join('; ')) + '">❌ Melanggar</span>';
+      if (c.status === 'ok') return '<span class="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs font-semibold text-emerald-300">✅ Disiplin</span>';
+      return '<span class="inline-flex items-center rounded-full bg-zinc-800 px-2 py-0.5 text-xs text-zinc-400" title="Isi entry, SL, TP, modal dan risiko atau lot untuk cek disiplin">Data kurang</span>';
+    }
+    function resultClass(v) { return v === null ? 'text-zinc-400' : v > 0 ? 'text-emerald-300' : v < 0 ? 'text-red-300' : 'text-zinc-300'; }
+    function positionLabel(p) {
+      if (p === 'buy') return '<span class="text-emerald-300">Buy</span>';
+      if (p === 'sell') return '<span class="text-red-300">Sell</span>';
+      return '<span class="text-zinc-500">-</span>';
+    }
+    function riskCell(c) {
+      if (c.risk === null) return '-';
+      return fmtMoney(c.risk) + (c.riskDerived ? '*' : '') + (c.riskPct !== null ? ' (' + fmtPct(c.riskPct) + ')' : '');
+    }
+
+    // Stats over trades that have a result $. Equity curve runs oldest first
+    // (date, then entry time with no-time trades first, then id), matching
+    // the list's newest-first order reversed.
+    function summarize(all) {
+      const done = all.filter(t => num(t.result_amount) !== null);
+      const wins = done.filter(t => num(t.result_amount) > 0).length;
+      const rs = done.map(t => calc(t).r).filter(r => r !== null);
+      const totalR = rs.length ? rs.reduce((a, b) => a + b, 0) : null;
+      const ordered = done.slice().sort((a, b) =>
+        (a.trade_date || '').localeCompare(b.trade_date || '') ||
+        (a.entry_time || '').localeCompare(b.entry_time || '') ||
+        Number(a.id) - Number(b.id));
+      // Starting balance: capital recorded on the earliest trade that has
+      // one, minus results booked before it.
+      let startCapital = null;
+      let cum = 0;
+      for (const t of ordered) {
+        const cap = num(t.capital);
+        if (cap !== null) { startCapital = cap - cum; break; }
+        cum += num(t.result_amount);
+      }
+      cum = 0;
+      let peak = 0, maxDd = 0, ddPct = null;
+      for (const t of ordered) {
+        cum += num(t.result_amount);
+        if (cum > peak) peak = cum;
+        const dd = peak - cum;
+        if (dd > maxDd) {
+          maxDd = dd;
+          const peakEquity = startCapital !== null ? startCapital + peak : null;
+          ddPct = peakEquity > 0 ? dd / peakEquity * 100 : null;
+        }
+      }
+      return {
+        total: all.length,
+        withResult: done.length,
+        excluded: all.length - done.length,
+        wins,
+        winRate: done.length ? wins / done.length * 100 : null,
+        totalR,
+        avgR: rs.length ? totalR / rs.length : null,
+        rCount: rs.length,
+        maxDd: done.length ? maxDd : null,
+        ddPct: done.length && maxDd === 0 && startCapital !== null ? 0 : ddPct,
+      };
+    }
+
+    function renderSummary() {
+      const s = summarize(trades);
+      $('sum-total').textContent = String(s.total);
+      $('sum-winrate').textContent = fmtPct(s.winRate);
+      $('sum-winrate-sub').textContent = s.withResult ? s.wins + ' menang dari ' + s.withResult : '';
+      $('sum-total-r').textContent = fmtR(s.totalR);
+      $('sum-avg-r').textContent = fmtR(s.avgR);
+      $('sum-r-sub').textContent = s.rCount && s.rCount < s.withResult ? 'Dari ' + s.rCount + ' trade dengan risiko' : '';
+      $('sum-dd').textContent = s.maxDd === null ? '-' : fmtMoney(s.maxDd === 0 ? 0 : -s.maxDd);
+      $('sum-dd-sub').textContent = s.ddPct === null ? '' : fmtPct(s.ddPct) + ' dari modal puncak';
+      $('sum-excluded').textContent = s.excluded + ' trade tanpa hasil tidak dihitung.';
+      $('sum-excluded').classList.toggle('hidden', !s.excluded);
+    }
+
+    function showListState(state) {
+      $('summary').classList.toggle('hidden', state !== 'list' && state !== 'empty');
+      $('list-loading').classList.toggle('hidden', state !== 'loading');
+      $('list-error').classList.toggle('hidden', state !== 'error');
+      $('list-empty').classList.toggle('hidden', state !== 'empty');
+      const has = state === 'list';
+      $('trade-list').classList.toggle('hidden', !has);
+      $('trade-table-wrap').classList.toggle('hidden', !has);
+      $('trade-table-wrap').classList.toggle('md:block', has);
+      $('trade-table-wrap').classList.toggle('max-md:hidden', has);
+    }
+
+    function renderList() {
+      renderSummary();
+      if (!trades.length) return showListState('empty');
+      const rows = trades.map(t => ({ t, c: calc(t) }));
+      $('trade-list').innerHTML = rows.map(({ t, c }) =>
+        '<li><button type="button" data-id="' + t.id + '" class="trade-row w-full text-left px-4 py-3 flex flex-col gap-1.5 hover:bg-zinc-900 focus:outline-none focus-visible:bg-zinc-900">' +
+          '<div class="flex items-center justify-between gap-2">' +
+            '<span class="font-semibold">' + esc(t.instrument) + ' <span class="text-sm font-normal">' + positionLabel(t.position) + '</span></span>' +
+            badge(c) +
+          '</div>' +
+          '<div class="flex items-center justify-between gap-2 text-sm">' +
+            '<span class="text-zinc-400">' + esc(fmtDate(t.trade_date)) + (t.entry_time ? ' ' + esc(t.entry_time) : '') + '</span>' +
+            '<span class="font-mono ' + resultClass(c.result) + '">' + fmtMoney(c.result) + (c.r !== null ? ' (' + fmtR(c.r) + ')' : '') + '</span>' +
+          '</div>' +
+          '<div class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-zinc-400">' +
+            '<span>Risiko ' + riskCell(c) + '</span>' +
+            '<span>RR rencana ' + fmtRR(c.plannedRR) + '</span>' +
+            '<span>RR aktual ' + fmtRR(c.actualRR) + '</span>' +
+          '</div>' +
+        '</button></li>'
+      ).join('');
+      $('trade-tbody').innerHTML = rows.map(({ t, c }) =>
+        '<tr data-id="' + t.id + '" tabindex="0" class="trade-row cursor-pointer hover:bg-zinc-900 focus:outline-none focus-visible:bg-zinc-900">' +
+          '<td class="px-3 py-2 whitespace-nowrap">' + esc(fmtDate(t.trade_date)) + '</td>' +
+          '<td class="px-3 py-2 whitespace-nowrap font-semibold">' + esc(t.instrument) + '</td>' +
+          '<td class="px-3 py-2">' + positionLabel(t.position) + '</td>' +
+          '<td class="px-3 py-2 text-right font-mono">' + fmtPrice(t.entry_price) + '</td>' +
+          '<td class="px-3 py-2 text-right font-mono">' + fmtPrice(t.stop_loss) + '</td>' +
+          '<td class="px-3 py-2 text-right font-mono">' + fmtPrice(t.take_profit) + '</td>' +
+          '<td class="px-3 py-2 text-right font-mono">' + fmtPrice(t.exit_price) + '</td>' +
+          '<td class="px-3 py-2 text-right font-mono whitespace-nowrap">' + riskCell(c) + '</td>' +
+          '<td class="px-3 py-2 text-right font-mono">' + fmtRR(c.plannedRR) + '</td>' +
+          '<td class="px-3 py-2 text-right font-mono">' + fmtRR(c.actualRR) + '</td>' +
+          '<td class="px-3 py-2 text-right font-mono whitespace-nowrap ' + resultClass(c.result) + '">' + fmtMoney(c.result) + (c.r !== null ? '<br><span class="text-xs">' + fmtR(c.r) + '</span>' : '') + '</td>' +
+          '<td class="px-3 py-2 text-center whitespace-nowrap">' + badge(c) + '</td>' +
+        '</tr>'
+      ).join('');
+      showListState('list');
+    }
+
+    async function loadTrades() {
+      showListState('loading');
       try {
-        const res = await fetch('/api/press', {
-          method: 'POST',
+        const res = await fetch('/api/trades' + (DEMO ? '?demo=1' : ''), { headers });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        trades = data.trades || [];
+        $('demo-note').classList.toggle('hidden', !data.demo);
+        renderList();
+      } catch (err) {
+        console.warn('load trades failed', err.message);
+        showListState('error');
+      }
+    }
+
+    function today() {
+      const d = new Date();
+      return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    }
+
+    function readForm() {
+      const fd = new FormData(form);
+      const t = {};
+      for (const k of ['trade_date', 'entry_time', 'exit_time', 'instrument', 'category', 'position', 'setup', 'timeframe', 'entry_reason', 'emotion', 'lesson']) {
+        t[k] = (fd.get(k) || '').toString();
+      }
+      for (const k of NUMERIC_FIELDS) t[k] = (fd.get(k) || '').toString().trim();
+      const fp = fd.get('followed_plan');
+      t.followed_plan = fp === 'true' ? true : fp === 'false' ? false : null;
+      t.mistakes = fd.getAll('mistakes');
+      return t;
+    }
+
+    function fillForm(t) {
+      form.reset();
+      const set = (name, v) => { form.elements[name].value = v === null || v === undefined ? '' : v; };
+      for (const k of ['trade_date', 'entry_time', 'exit_time', 'instrument', 'category', 'setup', 'timeframe', 'entry_reason', 'emotion', 'lesson']) set(k, t[k]);
+      for (const k of NUMERIC_FIELDS) { const n = num(t[k]); set(k, n === null ? '' : String(n)); }
+      for (const r of form.querySelectorAll('input[name="position"]')) r.checked = r.value === t.position;
+      set('followed_plan', t.followed_plan === true ? 'true' : t.followed_plan === false ? 'false' : '');
+      const ms = t.mistakes || [];
+      for (const c of form.querySelectorAll('input[name="mistakes"]')) c.checked = ms.includes(c.value);
+    }
+
+    function updateCalc() {
+      const t = readForm();
+      const c = calc(t);
+      $('calc-risk').textContent = c.risk === null ? '-' : fmtMoney(c.risk) + (c.riskDerived ? ' (perkiraan)' : '');
+      $('calc-risk-pct').textContent = fmtPct(c.riskPct);
+      $('calc-r').textContent = fmtR(c.r);
+      $('calc-planned-rr').textContent = fmtRR(c.plannedRR);
+      $('calc-actual-rr').textContent = fmtRR(c.actualRR);
+      $('calc-badge').innerHTML = badge(c);
+      $('calc-violations').textContent = c.violations.join('. ');
+    }
+
+    function showView(name) {
+      $('list-view').classList.toggle('hidden', name !== 'list');
+      $('form-view').classList.toggle('hidden', name !== 'form');
+      window.scrollTo(0, 0);
+    }
+
+    function openForm(trade) {
+      editingId = trade ? trade.id : null;
+      if (trade) fillForm(trade);
+      else { form.reset(); form.elements.trade_date.value = today(); }
+      $('form-title').textContent = trade ? 'Ubah trade' : 'Catat trade';
+      $('save-btn').textContent = trade ? 'Simpan perubahan' : 'Simpan trade';
+      $('delete-btn').classList.toggle('hidden', !trade);
+      $('form-error').classList.add('hidden');
+      updateCalc();
+      showView('form');
+      form.elements.instrument.focus({ preventScroll: true });
+    }
+
+    function showFormError(msg) {
+      $('form-error').textContent = msg;
+      $('form-error').classList.remove('hidden');
+    }
+
+    form.addEventListener('input', updateCalc);
+    form.addEventListener('change', updateCalc);
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const t = readForm();
+      if (!t.trade_date) return showFormError('Tanggal wajib diisi.');
+      if (!t.instrument.trim()) return showFormError('Instrumen wajib diisi.');
+      for (const k of NUMERIC_FIELDS) {
+        if (t[k] !== '' && num(t[k]) === null) return showFormError('Ada angka yang tidak valid. Gunakan angka saja, contoh 1.0850.');
+      }
+      $('save-btn').disabled = true;
+      try {
+        const res = await fetch(editingId ? '/api/trades/' + editingId : '/api/trades', {
+          method: editingId ? 'PUT' : 'POST',
           headers: { 'Content-Type': 'application/json', ...headers },
+          body: JSON.stringify(t),
         });
-        if (res.ok) loadLeaderboard();
-        else if (res.status === 401) document.getElementById('count').textContent = 'Sign in to press!';
-      } catch {}
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) return showFormError((data.error || 'Gagal menyimpan trade') + '. Coba lagi.');
+        await loadTrades();
+        showView('list');
+      } catch {
+        showFormError('Gagal menyimpan trade. Periksa koneksi lalu coba lagi.');
+      } finally {
+        $('save-btn').disabled = false;
+      }
     });
 
-    loadLeaderboard();
+    $('delete-btn').addEventListener('click', async () => {
+      if (!editingId || !confirm('Hapus trade ini? Tindakan ini tidak bisa dibatalkan.')) return;
+      try {
+        const res = await fetch('/api/trades/' + editingId, { method: 'DELETE', headers });
+        if (!res.ok) return showFormError('Gagal menghapus trade. Coba lagi.');
+        await loadTrades();
+        showView('list');
+      } catch {
+        showFormError('Gagal menghapus trade. Periksa koneksi lalu coba lagi.');
+      }
+    });
+
+    function onRowActivate(e) {
+      const row = e.target.closest('.trade-row');
+      if (!row || DEMO) return;
+      if (e.type === 'keydown' && e.key !== 'Enter') return;
+      const t = trades.find(x => String(x.id) === row.dataset.id);
+      if (t) openForm(t);
+    }
+    for (const id of ['trade-list', 'trade-tbody']) {
+      $(id).addEventListener('click', onRowActivate);
+      $(id).addEventListener('keydown', onRowActivate);
+    }
+    $('new-trade-btn').addEventListener('click', () => openForm(null));
+    $('empty-new-btn').addEventListener('click', () => openForm(null));
+    $('back-btn').addEventListener('click', () => showView('list'));
+    $('retry-btn').addEventListener('click', loadTrades);
+
+    loadTrades();
   </script>
 </body>
 </html>

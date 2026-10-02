@@ -88,11 +88,14 @@ tables you've marked private), etc.
 
 ## About Trading journal
 
-_(add a sentence or two of product context here so Claude Code has a
-shared understanding of what this app is for)_
+A personal trading journal: each user logs their own trades (forex, saham,
+kripto) and sees auto-calculated risk %, R and RR plus a discipline badge
+(❌ when risk > 1% of capital or planned RR < 1:2). UI copy is Bahasa Indonesia.
 
 ## App-specific conventions
 
-_(optional — e.g. "all currency values stored as integer cents, not
-floats"; "the `posts` table is append-only"; "avoid adding new
-dependencies"; etc.)_
+- `trades` is `staging:private`; every query is scoped to `req.user.id`.
+- Derived numbers are never stored; `calc()` in `public/index.html` is the
+  single place they are computed. When risk $ is empty it is estimated as
+  |Entry - SL| x lot x contract size (forex 100000, saham 100, kripto 1).
+- Every trade field except date and instrument is optional.
