@@ -144,5 +144,8 @@
     "approvals": {
       "atLeast": 21
     }
-  }
+  },
+  "admins": [
+    "ocank14"
+  ]
 }
