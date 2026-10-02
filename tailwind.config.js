@@ -20,14 +20,39 @@ module.exports = {
   // extractor cannot see them. Prefer whole literals in the markup instead.
   safelist: [],
 
-  // Matches the <html class="dark"> in public/index.html: dark: variants key
-  // off that class rather than the OS colour-scheme preference.
+  // The theme bootstrap in public/index.html toggles .dark on <html> from
+  // the platform theme (OS preference standalone); tokens key off that class.
   darkMode: 'class',
 
   // Stops hover: styles sticking after a tap on touch screens. Required by
   // the usernode-native UI kit and harmless without it.
   future: { hoverOnlyWhenSupported: true },
 
-  theme: { extend: {} },
+  theme: {
+    extend: {
+      // Semantic colours backed by the tokens in styles/tailwind-input.css,
+      // so one class renders correctly in both light and dark mode.
+      colors: {
+        canvas: 'rgb(var(--c-canvas) / <alpha-value>)',
+        surface: 'rgb(var(--c-surface) / <alpha-value>)',
+        'surface-2': 'rgb(var(--c-surface-2) / <alpha-value>)',
+        line: 'rgb(var(--c-line) / <alpha-value>)',
+        'line-2': 'rgb(var(--c-line-2) / <alpha-value>)',
+        ink: 'rgb(var(--c-ink) / <alpha-value>)',
+        'ink-2': 'rgb(var(--c-ink-2) / <alpha-value>)',
+        muted: 'rgb(var(--c-muted) / <alpha-value>)',
+        'muted-2': 'rgb(var(--c-muted-2) / <alpha-value>)',
+        accent: 'rgb(var(--c-accent) / <alpha-value>)',
+        'accent-hover': 'rgb(var(--c-accent-hover) / <alpha-value>)',
+        'on-accent': 'rgb(var(--c-on-accent) / <alpha-value>)',
+        buy: 'rgb(var(--c-buy) / <alpha-value>)',
+        sell: 'rgb(var(--c-sell) / <alpha-value>)',
+        warn: 'rgb(var(--c-warn) / <alpha-value>)',
+      },
+      fontFamily: {
+        sans: ['Sora', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
+      },
+    },
+  },
   plugins: [],
 };

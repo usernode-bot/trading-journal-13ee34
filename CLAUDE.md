@@ -99,6 +99,26 @@ kripto) and sees auto-calculated risk %, R and RR plus a discipline badge
   single place they are computed. When risk $ is empty it is estimated as
   |Entry - SL| x lot x contract size (forex 100000, saham 100, kripto 1).
 - Every trade field except date and instrument is optional.
+- Discipline has three rules: risk at most 1% of capital, planned RR at
+  least 1:2, and `followed_plan` not `false` (unset does not count).
+- Colours are tokens (`--c-*` RGB triplets in `styles/tailwind-input.css`,
+  light in `:root`, dark in `.dark`) exposed as semantic Tailwind classes
+  (`bg-canvas`, `bg-surface`, `border-line`, `text-ink`, `text-muted`,
+  `bg-accent`, `text-buy`, `text-sell`, `text-warn`). Never write a raw
+  palette class (`zinc-*`, `violet-*`): it would not follow the theme.
+  Green is Buy/profit, red-orange is Sell/loss, teal is the accent.
+- Screens are hash tabs (`#/jurnal`, `#/broker`, `#/sinyal`, `#/vip`) behind
+  a fixed bottom nav; `--chrome-h` (measured) pads `<main>` so content is
+  never under it.
+- `BROKERS`, `CONTACT`, `PLANS` and `SIGNALS` at the top of the script are
+  the only place broker, contact, plan and example-signal data live. Keep
+  Exness's affiliate link with `rel="noopener sponsored"` and its affiliate
+  label; never claim a broker is "terbaik" or "pasti aman", and never claim
+  "pasti profit" or "akurasi 100%".
+- Selected broker and VIP status are in-memory only (no localStorage), and
+  payment is simulated. The `// TODO backend:` comments mark where signup,
+  payment verification and signal delivery should move server-side.
+- The disclaimer footer must stay on every screen.
 - `broker_ref` holds the broker ticket of an imported trade. It is not in
   `WRITE_FIELDS`, so editing a trade never changes it. Import duplicates are
   found by ticket, or by the fingerprint date + instrument + position +
