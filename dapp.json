@@ -142,7 +142,7 @@
   "governance": {
     "approvers": "anyone",
     "approvals": {
-      "atLeast": 21
+      "atLeast": 2
     }
   },
   "admins": [
