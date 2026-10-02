@@ -117,6 +117,32 @@ app.get('/favicon.ico', (_req, res) => res.status(204).end());
 
 const IS_STAGING = process.env.USERNODE_ENV === 'staging';
 
+// ---- Language preference ----------------------------------------------------
+// Codes are the same set public/i18n.js ships; the frontend falls back to its
+// default when a stored code is unknown (e.g. after a language removal).
+const LANG_CODES = [
+  'id', 'en', 'es', 'fr', 'de', 'pt', 'ru', 'zh-CN', 'zh-TW', 'ja',
+  'ko', 'ar', 'hi', 'tr', 'it', 'nl', 'pl', 'th', 'vi', 'ms',
+];
+
+app.get('/api/prefs', (req, res) => {
+  pool.query('SELECT language FROM user_prefs WHERE user_id = $1', [req.user.id])
+    .then(({ rows }) => res.json({ language: rows[0]?.language || 'id' }))
+    .catch(() => res.status(500).json({ error: 'Gagal memuat preferensi' }));
+});
+
+app.put('/api/prefs', (req, res) => {
+  const language = req.body && req.body.language;
+  if (!LANG_CODES.includes(language)) return res.status(400).json({ error: 'Kode bahasa tidak valid' });
+  pool.query(
+    `INSERT INTO user_prefs (user_id, language) VALUES ($1, $2)
+     ON CONFLICT (user_id) DO UPDATE SET language = $2, updated_at = NOW()`,
+    [req.user.id, language]
+  )
+    .then(() => res.json({ language }))
+    .catch(() => res.status(500).json({ error: 'Gagal menyimpan preferensi' }));
+});
+
 // ---- Trades -----------------------------------------------------------------
 // Every field except date and instrument is optional, so a quick entry can be
 // completed later. Derived numbers (risk %, R, RR, discipline) are computed in
@@ -448,6 +474,16 @@ async function start() {
     ON trades (user_id, broker_ref) WHERE broker_ref IS NOT NULL`);
   await pool.query(`CREATE INDEX IF NOT EXISTS trades_user_date_idx ON trades (user_id, trade_date DESC)`);
   await pool.query(`COMMENT ON TABLE trades IS 'staging:private'`);
+
+  // Per-user UI language. Public by default (only a preference code, no
+  // personal content), so staging previews can seed a demo row.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS user_prefs (
+      user_id INTEGER PRIMARY KEY,
+      language VARCHAR(10) NOT NULL DEFAULT 'id',
+      updated_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
 
   server = app.listen(port, () => console.log(`Listening on :${port}`));
   // Let Envoy retire idle upstream connections at 60s, with a 15s margin.
