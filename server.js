@@ -25,6 +25,9 @@ const APP_AUDIENCE = process.env.USERNODE_APP_ID
 // Everything else requires a valid platform-issued JWT.
 const PUBLIC_API_PATHS = new Set(['/health']);
 
+// CSV imports send up to 1000 trades in one body, more than the default
+// 100 kB. Registered first so the global parser below skips this body.
+app.use('/api/trades/import', express.json({ limit: '2mb' }));
 app.use(express.json());
 
 // The platform's three centrally hosted files — the bridge, the native UI
@@ -201,21 +204,131 @@ app.get('/api/trades', async (req, res) => {
   }
 });
 
+function insertSql(extra) {
+  const cols = ['user_id', 'username', ...WRITE_FIELDS, ...extra];
+  return `INSERT INTO trades (${cols.join(', ')}) VALUES (${cols.map((_, i) => '$' + (i + 1)).join(', ')})`;
+}
+
 app.post('/api/trades', async (req, res) => {
   let t;
   try { t = cleanTrade(req.body); } catch (err) { return res.status(400).json({ error: err.message }); }
   try {
-    const cols = ['user_id', 'username', ...WRITE_FIELDS];
     const vals = [req.user.id, req.user.username, ...WRITE_FIELDS.map(f => t[f])];
-    const { rows } = await pool.query(
-      `INSERT INTO trades (${cols.join(', ')}) VALUES (${cols.map((_, i) => '$' + (i + 1)).join(', ')})
-       RETURNING ${TRADE_COLUMNS}`,
-      vals
-    );
+    const { rows } = await pool.query(`${insertSql([])} RETURNING ${TRADE_COLUMNS}`, vals);
     res.status(201).json({ trade: rows[0] });
   } catch (err) {
     console.error('create trade failed', err);
     res.status(500).json({ error: 'Gagal menyimpan trade' });
+  }
+});
+
+// ---- CSV import ---------------------------------------------------------------
+// The browser parses the CSV and maps columns; this route revalidates every
+// row with cleanTrade() and classifies it as new, duplicate or invalid. A
+// duplicate has the same broker ticket as a stored trade, or the same
+// fingerprint (date, instrument, position, entry time, entry price, lot), or
+// repeats an earlier row of the same file. dryRun only classifies.
+const IMPORT_MAX_ROWS = 1000;
+
+function sameNum(a, b) {
+  if (a === null || a === undefined || b === null || b === undefined) return a == null && b == null;
+  return Number(a) === Number(b);
+}
+
+function fingerprint(t) {
+  if (t.entry_price === null || t.entry_price === undefined) return null;
+  const time = t.entry_time ? String(t.entry_time).slice(0, 5) : null;
+  if (time === null && (t.lot_size === null || t.lot_size === undefined)) return null;
+  return [t.trade_date, t.instrument, t.position || '', time || '',
+    Number(t.entry_price), t.lot_size === null || t.lot_size === undefined ? '' : Number(t.lot_size)].join('|');
+}
+
+async function classifyImport(client, userId, input) {
+  const rows = input.map(raw => {
+    try {
+      const t = cleanTrade(raw);
+      const ref = raw && typeof raw.broker_ref === 'string' ? raw.broker_ref.trim().slice(0, 100) : '';
+      t.broker_ref = ref || null;
+      return { t, status: 'new', reason: null };
+    } catch (err) {
+      return { t: null, status: 'invalid', reason: err.message };
+    }
+  });
+  const valid = rows.filter(r => r.t);
+  if (!valid.length) return rows;
+  const refs = [...new Set(valid.map(r => r.t.broker_ref).filter(Boolean))];
+  const dates = valid.map(r => r.t.trade_date).sort();
+  const [byRef, byRange] = await Promise.all([
+    refs.length
+      ? client.query('SELECT broker_ref FROM trades WHERE user_id = $1 AND broker_ref = ANY($2)', [userId, refs])
+      : { rows: [] },
+    client.query(
+      `SELECT to_char(trade_date, 'YYYY-MM-DD') AS trade_date, to_char(entry_time, 'HH24:MI') AS entry_time,
+         instrument, position, entry_price, lot_size
+       FROM trades WHERE user_id = $1 AND trade_date BETWEEN $2 AND $3`,
+      [userId, dates[0], dates[dates.length - 1]]
+    ),
+  ]);
+  const knownRefs = new Set(byRef.rows.map(r => r.broker_ref));
+  const knownPrints = new Set(byRange.rows.map(fingerprint).filter(Boolean));
+  const fileRefs = new Set();
+  const filePrints = new Set();
+  for (const r of valid) {
+    const ref = r.t.broker_ref;
+    const fp = fingerprint(r.t);
+    if ((ref && knownRefs.has(ref)) || (fp && knownPrints.has(fp))) {
+      r.status = 'duplicate'; r.reason = 'Sudah ada di jurnal';
+    } else if ((ref && fileRefs.has(ref)) || (fp && filePrints.has(fp))) {
+      r.status = 'duplicate'; r.reason = 'Duplikat di file';
+    }
+    if (ref) fileRefs.add(ref);
+    if (fp) filePrints.add(fp);
+  }
+  return rows;
+}
+
+function countStatuses(rows) {
+  const counts = { new: 0, duplicate: 0, invalid: 0 };
+  for (const r of rows) counts[r.status]++;
+  return counts;
+}
+
+app.post('/api/trades/import', async (req, res) => {
+  const input = req.body && req.body.rows;
+  if (!Array.isArray(input) || !input.length) return res.status(400).json({ error: 'Tidak ada baris untuk diimpor' });
+  if (input.length > IMPORT_MAX_ROWS) return res.status(400).json({ error: 'Maksimal ' + IMPORT_MAX_ROWS + ' trade per impor' });
+  if (req.body.dryRun === true) {
+    try {
+      const rows = await classifyImport(pool, req.user.id, input);
+      return res.json({ rows: rows.map(r => ({ status: r.status, reason: r.reason })), counts: countStatuses(rows) });
+    } catch (err) {
+      console.error('import preview failed', err);
+      return res.status(500).json({ error: 'Gagal memeriksa file' });
+    }
+  }
+  let client;
+  try {
+    client = await pool.connect();
+    await client.query('BEGIN');
+    const rows = await classifyImport(client, req.user.id, input);
+    const sql = insertSql(['broker_ref']) + ' ON CONFLICT (user_id, broker_ref) WHERE broker_ref IS NOT NULL DO NOTHING';
+    let imported = 0;
+    for (const r of rows) {
+      if (r.status !== 'new') continue;
+      const { rowCount } = await client.query(sql,
+        [req.user.id, req.user.username, ...WRITE_FIELDS.map(f => r.t[f]), r.t.broker_ref]);
+      if (rowCount) imported++;
+      else r.status = 'duplicate';
+    }
+    await client.query('COMMIT');
+    const counts = countStatuses(rows);
+    res.json({ imported, duplicate: counts.duplicate, invalid: counts.invalid });
+  } catch (err) {
+    if (client) await client.query('ROLLBACK').catch(() => {});
+    console.error('import trades failed', err);
+    res.status(500).json({ error: 'Gagal mengimpor trade' });
+  } finally {
+    if (client) client.release();
   }
 });
 
@@ -326,8 +439,13 @@ async function start() {
       ADD COLUMN IF NOT EXISTS followed_plan BOOLEAN,
       ADD COLUMN IF NOT EXISTS mistakes TEXT[] NOT NULL DEFAULT '{}',
       ADD COLUMN IF NOT EXISTS lesson TEXT,
-      ADD COLUMN IF NOT EXISTS result_amount NUMERIC
+      ADD COLUMN IF NOT EXISTS result_amount NUMERIC,
+      ADD COLUMN IF NOT EXISTS broker_ref VARCHAR(100)
   `);
+  // broker_ref is the broker's ticket for imported trades; one ticket is
+  // imported at most once per user.
+  await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS trades_user_broker_ref_idx
+    ON trades (user_id, broker_ref) WHERE broker_ref IS NOT NULL`);
   await pool.query(`CREATE INDEX IF NOT EXISTS trades_user_date_idx ON trades (user_id, trade_date DESC)`);
   await pool.query(`COMMENT ON TABLE trades IS 'staging:private'`);
 

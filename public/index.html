@@ -103,9 +103,13 @@
     <section id="list-view" class="flex flex-col gap-4">
       <div class="flex items-center justify-between gap-3 px-1">
         <h1 class="text-xl font-bold">Jurnal trading</h1>
-        <button type="button" id="new-trade-btn" class="rounded-lg bg-violet-600 hover:bg-violet-500 px-4 py-2 text-sm font-semibold text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-400">Catat trade</button>
+        <div class="flex items-center gap-2">
+          <button type="button" id="import-btn" class="rounded-lg border border-zinc-700 px-4 py-2 text-sm text-zinc-100 hover:bg-zinc-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-400">Impor CSV</button>
+          <button type="button" id="new-trade-btn" class="rounded-lg bg-violet-600 hover:bg-violet-500 px-4 py-2 text-sm font-semibold text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-400">Catat trade</button>
+        </div>
       </div>
       <p id="demo-note" class="hidden px-1 text-sm text-amber-300">Contoh data staging. Trade ini tidak tersimpan dan tidak bisa diubah.</p>
+      <p id="import-note" class="hidden px-1 text-sm text-emerald-300" role="status"></p>
       <p class="px-1 text-xs text-zinc-500">Disiplin: ✅ jika risiko maksimal 1% modal dan RR rencana minimal 1:2. ❌ jika salah satunya dilanggar. Risiko bertanda * dihitung otomatis (perkiraan).</p>
 
       <section id="summary" class="hidden rounded-xl border border-zinc-800 p-4 flex flex-col gap-3" aria-labelledby="summary-title">
@@ -131,6 +135,7 @@
         <p class="font-semibold">Belum ada trade</p>
         <p class="text-sm text-zinc-400">Catat trade pertamamu untuk melihat risiko, RR dan cek disiplin otomatis.</p>
         <button type="button" id="empty-new-btn" class="rounded-lg bg-violet-600 hover:bg-violet-500 px-4 py-2 text-sm font-semibold text-white">Catat trade pertama</button>
+        <button type="button" id="empty-import-btn" class="rounded-lg border border-zinc-700 px-4 py-2 text-sm text-zinc-100 hover:bg-zinc-800">Impor dari CSV</button>
       </div>
 
       <!-- Ponsel: daftar -->
@@ -295,6 +300,80 @@
           <button type="submit" id="save-btn" class="sm:ml-auto rounded-lg bg-violet-600 hover:bg-violet-500 px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-400">Simpan trade</button>
         </div>
       </form>
+    </section>
+
+    <!-- Impor CSV -->
+    <section id="import-view" class="hidden w-full max-w-2xl mx-auto flex flex-col gap-6">
+      <div class="flex items-center gap-3 px-1">
+        <button type="button" id="import-back-btn" class="rounded-lg px-2 py-1 text-sm text-violet-300 hover:bg-zinc-800">&larr; Kembali</button>
+        <h1 class="text-xl font-bold">Impor trade dari CSV</h1>
+      </div>
+
+      <div class="flex flex-col gap-3">
+        <h2 class="text-sm font-semibold text-zinc-400">1. Pilih file</h2>
+        <label id="drop-zone" class="flex flex-col items-center gap-2 rounded-xl border-2 border-dashed border-zinc-700 p-6 text-center text-sm cursor-pointer hover:bg-zinc-900">
+          <input id="csv-input" type="file" accept=".csv,text/csv,text/plain" class="sr-only">
+          <span class="rounded-lg bg-zinc-800 px-4 py-2 font-semibold text-zinc-100">Pilih file CSV</span>
+          <span class="text-zinc-400">atau tarik file ke sini. Maksimal 2 MB dan 1000 baris.</span>
+          <span id="file-name" class="hidden font-mono text-zinc-300"></span>
+        </label>
+        <a href="/contoh-impor.csv" download="contoh-impor.csv" id="sample-link" class="self-start px-1 text-sm text-violet-300 hover:underline">Unduh contoh CSV</a>
+        <p id="file-error" class="hidden text-sm text-red-300" role="alert"></p>
+      </div>
+
+      <div id="map-section" class="hidden flex flex-col gap-3">
+        <h2 class="text-sm font-semibold text-zinc-400">2. Cocokkan kolom</h2>
+        <p class="text-xs text-zinc-500">Kolom dicocokkan otomatis dari judulnya. Periksa dan ubah jika ada yang salah. Tanggal dan Instrumen wajib.</p>
+        <div id="map-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <label class="flex flex-col gap-1 text-sm"><span class="text-zinc-300">Format tanggal</span>
+            <select id="opt-date" class="field">
+              <option value="auto">Otomatis</option>
+              <option value="dmy">HH/BB/TTTT</option>
+              <option value="mdy">BB/HH/TTTT</option>
+              <option value="ymd">TTTT-BB-HH</option>
+            </select></label>
+          <label class="flex flex-col gap-1 text-sm"><span class="text-zinc-300">Pemisah desimal</span>
+            <select id="opt-decimal" class="field">
+              <option value="auto">Otomatis</option>
+              <option value="dot">Titik</option>
+              <option value="comma">Koma</option>
+            </select></label>
+          <label class="flex flex-col gap-1 text-sm"><span class="text-zinc-300">Judul kolom ada di baris</span>
+            <select id="opt-header" class="field"></select></label>
+        </div>
+      </div>
+
+      <div id="preview-section" class="hidden flex flex-col gap-3">
+        <h2 class="text-sm font-semibold text-zinc-400">3. Pratinjau</h2>
+        <p id="preview-counts" class="text-sm text-zinc-300"></p>
+        <p id="preview-hint" class="hidden text-sm text-amber-300">Pilih kolom Tanggal dan Instrumen.</p>
+        <ul id="preview-list" class="md:hidden divide-y divide-zinc-800 rounded-xl border border-zinc-800"></ul>
+        <div class="max-md:hidden overflow-x-auto rounded-xl border border-zinc-800">
+          <table class="min-w-full text-sm">
+            <thead class="bg-zinc-900 text-left text-xs text-zinc-400">
+              <tr>
+                <th class="px-3 py-2 font-medium">Baris</th>
+                <th class="px-3 py-2 font-medium">Status</th>
+                <th class="px-3 py-2 font-medium">Tanggal</th>
+                <th class="px-3 py-2 font-medium">Instrumen</th>
+                <th class="px-3 py-2 font-medium">Posisi</th>
+                <th class="px-3 py-2 font-medium text-right">Entry</th>
+                <th class="px-3 py-2 font-medium text-right">Exit</th>
+                <th class="px-3 py-2 font-medium text-right">Lot</th>
+                <th class="px-3 py-2 font-medium text-right">Hasil</th>
+                <th class="px-3 py-2 font-medium text-center">Disiplin</th>
+              </tr>
+            </thead>
+            <tbody id="preview-tbody" class="divide-y divide-zinc-800"></tbody>
+          </table>
+        </div>
+        <p id="preview-more" class="hidden text-xs text-zinc-500"></p>
+        <p id="import-error" class="hidden text-sm text-red-300" role="alert"></p>
+        <div class="flex sm:justify-end">
+          <button type="button" id="do-import-btn" disabled class="w-full sm:w-auto rounded-lg bg-violet-600 hover:bg-violet-500 px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-400">Impor 0 trade</button>
+        </div>
+      </div>
     </section>
   </main>
 
@@ -554,6 +633,7 @@
     function showView(name) {
       $('list-view').classList.toggle('hidden', name !== 'list');
       $('form-view').classList.toggle('hidden', name !== 'form');
+      $('import-view').classList.toggle('hidden', name !== 'import');
       window.scrollTo(0, 0);
     }
 
@@ -565,6 +645,7 @@
       $('save-btn').textContent = trade ? 'Simpan perubahan' : 'Simpan trade';
       $('delete-btn').classList.toggle('hidden', !trade);
       $('form-error').classList.add('hidden');
+      $('import-note').classList.add('hidden');
       updateCalc();
       showView('form');
       form.elements.instrument.focus({ preventScroll: true });
@@ -631,6 +712,541 @@
     $('empty-new-btn').addEventListener('click', () => openForm(null));
     $('back-btn').addEventListener('click', () => showView('list'));
     $('retry-btn').addEventListener('click', loadTrades);
+
+    // ---- Impor CSV ----------------------------------------------------------
+    // The file is parsed here; the server revalidates every row and decides
+    // which are new, duplicate or invalid (dryRun for the preview).
+    const IMPORT_MAX_BYTES = 2 * 1024 * 1024;
+    const IMPORT_MAX_ROWS = 1000;
+    const PREVIEW_ROWS = 50;
+    // Journal fields a column can be matched to, in the trade form's words.
+    const IMPORT_FIELDS = [
+      ['trade_date', 'Tanggal'], ['entry_time', 'Jam entry'], ['exit_time', 'Jam exit'],
+      ['instrument', 'Instrumen'], ['category', 'Kategori'], ['position', 'Posisi'],
+      ['entry_price', 'Entry'], ['exit_price', 'Exit'], ['stop_loss', 'Stop loss (SL)'], ['take_profit', 'Take profit (TP)'],
+      ['lot_size', 'Lot / ukuran posisi'], ['capital', 'Modal saat ini ($)'], ['risk_amount', 'Risiko ($)'],
+      ['result_amount', 'Hasil ($)'], ['commission', 'Komisi ($)'], ['swap', 'Swap ($)'], ['broker_ref', 'No. tiket'],
+      ['setup', 'Setup'], ['timeframe', 'Timeframe'], ['entry_reason', 'Alasan entry'], ['lesson', 'Pelajaran'],
+    ];
+    // Normalised header names per field, best match first. `first` only
+    // matches the first column with that name, `repeat` only a later one
+    // (MetaTrader exports "Time" and "Price" twice: open, then close).
+    const IMPORT_SYNONYMS = {
+      trade_date: ['date', 'tanggal', 'opentime', 'opendate', 'entrydate', 'tradedate', 'datetime', 'waktubuka', 'waktu', { n: 'time', first: true }],
+      entry_time: ['entrytime', 'jamentry', 'jambuka', { n: 'time', first: true }, { n: 'jam', first: true }],
+      exit_time: ['closetime', 'closedate', 'exittime', 'jamexit', 'waktututup', { n: 'time', repeat: true }, { n: 'datetime', repeat: true }],
+      instrument: ['symbol', 'simbol', 'instrument', 'instrumen', 'pair', 'ticker', 'market', 'kodesaham', 'saham', 'asset'],
+      category: ['category', 'kategori', 'assetclass'],
+      position: ['type', 'side', 'direction', 'posisi', 'action', 'buysell', 'bs', 'tipe'],
+      entry_price: ['openprice', 'entryprice', 'entry', 'hargaentry', 'hargabeli', 'avgprice', { n: 'price', first: true }],
+      exit_price: ['closeprice', 'exitprice', 'exit', 'hargaexit', 'hargajual', { n: 'price', repeat: true }],
+      stop_loss: ['sl', 'stoploss'],
+      take_profit: ['tp', 'takeprofit'],
+      lot_size: ['volume', 'lots', 'lot', 'size', 'qty', 'quantity'],
+      capital: ['capital', 'modal', 'balance', 'equity'],
+      risk_amount: ['risk', 'risiko'],
+      result_amount: ['profit', 'pl', 'pnl', 'profitloss', 'realizedpnl', 'netprofit', 'laba', 'labarugi', 'hasil'],
+      commission: ['commission', 'komisi', 'fee', 'fees'],
+      swap: ['swap', 'rollover'],
+      broker_ref: ['ticket', 'order', 'orderid', 'position', 'positionid', 'deal', 'tradeid', 'id', 'noorder', 'tiket'],
+      setup: ['setup'],
+      timeframe: ['timeframe', 'tf'],
+      entry_reason: ['alasanentry', 'reason', 'comment', 'komentar'],
+      lesson: ['lesson', 'pelajaran'],
+    };
+    const STATUS_PILL = {
+      new: '<span class="inline-flex items-center rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs font-semibold text-emerald-300">Baru</span>',
+      duplicate: '<span class="inline-flex items-center rounded-full bg-zinc-800 px-2 py-0.5 text-xs text-zinc-400">Duplikat</span>',
+      invalid: '<span class="inline-flex items-center rounded-full bg-red-500/15 px-2 py-0.5 text-xs font-semibold text-red-300">Tidak valid</span>',
+    };
+
+    let imp = null;        // { table, headerRow, headers, map, fixedCategory, fixedCapital }
+    let impRows = [];      // [{ line, trade, status, reason }]
+    let impCounts = null;
+    let impSeq = 0;
+    let impTimer = null;
+    let impBusy = false;
+    let impPending = false;  // a preview is scheduled or running; its counts are stale
+
+    function normHeader(h) { return String(h || '').toLowerCase().replace(/[^a-z0-9]/g, ''); }
+
+    // RFC 4180: quoted fields, "" escapes, newlines inside quotes, CRLF/LF.
+    function parseCsv(text, delim) {
+      const rows = [];
+      let row = [], field = '', quoted = false;
+      for (let i = 0; i < text.length; i++) {
+        const ch = text[i];
+        if (quoted) {
+          if (ch === '"') {
+            if (text[i + 1] === '"') { field += '"'; i++; } else quoted = false;
+          } else field += ch;
+        } else if (ch === '"' && field === '') quoted = true;
+        else if (ch === delim) { row.push(field); field = ''; }
+        else if (ch === '\n' || ch === '\r') {
+          if (ch === '\r' && text[i + 1] === '\n') i++;
+          row.push(field); rows.push(row); row = []; field = '';
+        } else field += ch;
+      }
+      if (field !== '' || row.length) { row.push(field); rows.push(row); }
+      return rows.filter(r => r.some(c => c.trim() !== ''));
+    }
+
+    // The delimiter that splits the most of the first lines into the same
+    // number of fields (a title line above the header splits into none).
+    function detectDelimiter(text) {
+      const lines = text.split(/\r?\n/).filter(l => l.trim()).slice(0, 12);
+      let best = ',', bestScore = 0;
+      for (const d of [',', ';', '\t']) {
+        const freq = {};
+        for (const l of lines) {
+          let n = 0, q = false;
+          for (const ch of l) { if (ch === '"') q = !q; else if (!q && ch === d) n++; }
+          if (n) freq[n] = (freq[n] || 0) + 1;
+        }
+        for (const [n, f] of Object.entries(freq)) {
+          const score = f * 1000 + Number(n);
+          if (score > bestScore) { best = d; bestScore = score; }
+        }
+      }
+      return best;
+    }
+
+    function knownHeaderCount(row) {
+      const all = new Set();
+      for (const list of Object.values(IMPORT_SYNONYMS)) for (const s of list) all.add(typeof s === 'string' ? s : s.n);
+      return row.filter(c => all.has(normHeader(c))).length;
+    }
+
+    function autoMap(headers) {
+      const norm = headers.map(normHeader);
+      const claimed = new Set();
+      const map = {};
+      for (const [field] of IMPORT_FIELDS) {
+        map[field] = null;
+        for (const entry of IMPORT_SYNONYMS[field] || []) {
+          const syn = typeof entry === 'string' ? { n: entry } : entry;
+          const name = syn.n;
+          const idx = norm.findIndex((h, i) => {
+            if (h !== name || claimed.has(i)) return false;
+            const earlier = norm.slice(0, i).includes(h);
+            if (syn.first && earlier) return false;
+            if (syn.repeat && !earlier) return false;
+            return true;
+          });
+          if (idx >= 0) { map[field] = idx; claimed.add(idx); break; }
+        }
+      }
+      return map;
+    }
+
+    function mapKey(headers) { return 'tj-import-map:' + headers.map(normHeader).join('|'); }
+    function loadSavedMap(headers) {
+      try {
+        const saved = JSON.parse(localStorage.getItem(mapKey(headers)) || 'null');
+        if (saved && typeof saved === 'object') return saved;
+      } catch {}
+      return null;
+    }
+    function saveMap() {
+      try { localStorage.setItem(mapKey(imp.headers), JSON.stringify(imp.map)); } catch {}
+    }
+
+    // "2026.09.01 09:15:00", "01/09/2026 9:15 PM", "2026-09-01T09:15"...
+    const DATE_RE = /^(\d{1,4})[-./](\d{1,2})[-./](\d{1,4})(?:[ T]+(\d{1,2}):(\d{2})(?::\d{2})?(?:\.\d+)?\s*([ap]m)?)?/i;
+    const TIME_RE = /(\d{1,2}):(\d{2})(?::\d{2})?(?:\.\d+)?\s*([ap]m)?/i;
+
+    function to24(h, m, ampm) {
+      h = Number(h); m = Number(m);
+      if (ampm) { const pm = ampm.toLowerCase() === 'pm'; if (h === 12) h = pm ? 12 : 0; else if (pm) h += 12; }
+      if (h > 23 || m > 59) return null;
+      return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+    }
+
+    function detectDateOrder(values) {
+      let dmy = false, mdy = false;
+      for (const v of values) {
+        const m = DATE_RE.exec(String(v).trim());
+        if (!m || m[1].length === 4) continue;
+        if (Number(m[1]) > 12) dmy = true;
+        if (Number(m[2]) > 12) mdy = true;
+      }
+      return mdy && !dmy ? 'mdy' : 'dmy';
+    }
+
+    // Returns { date: 'YYYY-MM-DD', time: 'HH:MM' | null } or null.
+    function parseDate(raw, order) {
+      const m = DATE_RE.exec(String(raw).trim());
+      if (!m) return null;
+      let y, mo, d;
+      if (m[1].length === 4) { y = m[1]; mo = m[2]; d = m[3]; }
+      else if (order === 'ymd') return null;
+      else {
+        y = m[3].length === 2 ? '20' + m[3] : m[3];
+        if (y.length !== 4) return null;
+        if (order === 'mdy') { mo = m[1]; d = m[2]; } else { d = m[1]; mo = m[2]; }
+      }
+      const dt = new Date(Number(y), Number(mo) - 1, Number(d));
+      if (dt.getFullYear() !== Number(y) || dt.getMonth() !== Number(mo) - 1 || dt.getDate() !== Number(d)) return null;
+      const date = y + '-' + String(mo).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+      const time = m[4] !== undefined ? to24(m[4], m[5], m[6]) : null;
+      return { date, time };
+    }
+
+    function parseTime(raw) {
+      const m = TIME_RE.exec(String(raw));
+      return m ? to24(m[1], m[2], m[3]) : null;
+    }
+
+    function cleanNumText(raw) {
+      let s = String(raw).replace(/[\s ]/g, '').replace(/^(rp|usd|idr)/i, '').replace(/(rp|usd|idr)$/i, '').replace(/[$%]/g, '');
+      let neg = false;
+      if (/^\(.*\)$/.test(s)) { neg = true; s = s.slice(1, -1); }
+      return { s: s.replace(/^\+/, ''), neg };
+    }
+
+    function detectDecimal(values) {
+      let comma = 0, dot = 0;
+      for (const v of values) {
+        const s = cleanNumText(v).s.replace(/^-/, '');
+        const lc = s.lastIndexOf(','), ld = s.lastIndexOf('.');
+        // "4.250" or "4,250" alone could be a thousands separator: no vote.
+        if (lc >= 0 && ld >= 0) { if (lc > ld) comma++; else dot++; }
+        else if (lc >= 0 && !/^\d{1,3}(,\d{3})+$/.test(s)) comma++;
+        else if (ld >= 0 && !/^\d{1,3}(\.\d{3})+$/.test(s)) dot++;
+      }
+      return comma > dot ? 'comma' : 'dot';
+    }
+
+    // A number, '' for an empty cell, or NaN when unreadable.
+    function parseNumber(raw, decimal) {
+      if (raw === undefined || raw === null || String(raw).trim() === '') return '';
+      let { s, neg } = cleanNumText(raw);
+      if (s.startsWith('-')) { neg = !neg; s = s.slice(1); }
+      s = decimal === 'comma' ? s.replace(/\./g, '').replace(',', '.') : s.replace(/,/g, '');
+      if (!/^\d*\.?\d+$|^\d+\.$/.test(s)) return NaN;
+      const n = Number(s);
+      return neg ? -n : n;
+    }
+
+    function parsePosition(raw) {
+      const s = String(raw || '').trim().toLowerCase();
+      if (s === 'b' || /buy|long|beli/.test(s)) return 'buy';
+      if (s === 's' || /sell|short|jual/.test(s)) return 'sell';
+      return null;
+    }
+
+    function parseCategory(raw) {
+      const s = String(raw || '').trim().toLowerCase();
+      if (/forex|^fx$/.test(s)) return 'forex';
+      if (/saham|stock|equity/.test(s)) return 'saham';
+      if (/kripto|crypto/.test(s)) return 'kripto';
+      return null;
+    }
+
+    const IMPORT_NUM_FIELDS = ['entry_price', 'exit_price', 'stop_loss', 'take_profit', 'lot_size', 'capital', 'risk_amount', 'result_amount', 'commission', 'swap'];
+
+    // Turns the parsed file into trade bodies for /api/trades/import, with a
+    // client-side reason when a cell cannot be read at all.
+    function buildImportRows() {
+      const { table, headerRow, map } = imp;
+      const data = table.slice(headerRow + 1);
+      const cell = (cells, field) => map[field] === null || map[field] === undefined ? '' : (cells[map[field]] || '').trim();
+      const colValues = (field) => map[field] === null || map[field] === undefined ? [] : data.map(r => cell(r, field)).filter(Boolean);
+      const dateOpt = $('opt-date').value;
+      const order = dateOpt === 'auto' ? detectDateOrder(colValues('trade_date')) : dateOpt;
+      const decOpt = $('opt-decimal').value;
+      const decimal = decOpt === 'auto' ? detectDecimal(IMPORT_NUM_FIELDS.flatMap(colValues)) : decOpt;
+      return data.map((cells, i) => {
+        const line = headerRow + i + 2;
+        const t = {};
+        let reason = null;
+        const rawDate = cell(cells, 'trade_date');
+        const pd = rawDate ? parseDate(rawDate, order) : null;
+        if (!rawDate) reason = 'Tanggal wajib diisi';
+        else if (!pd) reason = 'Tanggal tidak terbaca';
+        t.trade_date = pd ? pd.date : '';
+        t.entry_time = map.entry_time !== null && map.entry_time !== undefined ? '' : (pd && pd.time) || '';
+        for (const k of ['entry_time', 'exit_time']) {
+          const raw = cell(cells, k);
+          if (!raw) continue;
+          const tm = parseTime(raw);
+          if (tm) t[k] = tm; else reason = reason || 'Jam tidak terbaca';
+        }
+        t.exit_time = t.exit_time || '';
+        t.instrument = cell(cells, 'instrument');
+        t.category = parseCategory(cell(cells, 'category')) || imp.fixedCategory || null;
+        t.position = parsePosition(cell(cells, 'position'));
+        for (const k of ['setup', 'timeframe', 'entry_reason', 'lesson', 'broker_ref']) t[k] = cell(cells, k);
+        const n = {};
+        for (const k of IMPORT_NUM_FIELDS) {
+          n[k] = parseNumber(cell(cells, k), decimal);
+          if (Number.isNaN(n[k])) { reason = reason || 'Angka tidak valid'; n[k] = ''; }
+        }
+        for (const k of ['entry_price', 'exit_price', 'stop_loss', 'take_profit', 'lot_size', 'risk_amount']) t[k] = n[k];
+        const fixedCap = parseNumber(imp.fixedCapital, decimal);
+        t.capital = n.capital !== '' ? n.capital : (Number.isFinite(fixedCap) ? fixedCap : '');
+        const parts = [n.result_amount, n.commission, n.swap].filter(v => v !== '');
+        t.result_amount = parts.length ? Math.round(parts.reduce((a, b) => a + b, 0) * 1e8) / 1e8 : '';
+        return { line, trade: t, status: reason ? 'invalid' : null, reason };
+      });
+    }
+
+    function resetImport() {
+      clearTimeout(impTimer);
+      imp = null; impRows = []; impCounts = null; impSeq++; impPending = false;
+      $('csv-input').value = '';
+      $('file-name').classList.add('hidden');
+      $('file-error').classList.add('hidden');
+      $('map-section').classList.add('hidden');
+      $('preview-section').classList.add('hidden');
+      $('import-error').classList.add('hidden');
+    }
+
+    function openImport() {
+      resetImport();
+      $('import-note').classList.add('hidden');
+      showView('import');
+    }
+
+    function showFileError(msg) {
+      $('file-error').textContent = msg;
+      $('file-error').classList.remove('hidden');
+      $('map-section').classList.add('hidden');
+      $('preview-section').classList.add('hidden');
+    }
+
+    async function handleFile(file) {
+      resetImport();
+      if (!file) return;
+      $('file-name').textContent = file.name;
+      $('file-name').classList.remove('hidden');
+      if (file.size > IMPORT_MAX_BYTES) return showFileError('File terlalu besar. Maksimal 2 MB.');
+      let text;
+      try { text = (await file.text()).replace(/^﻿/, ''); } catch { return showFileError('File ini bukan CSV yang bisa dibaca.'); }
+      if (/\u0000/.test(text.slice(0, 1000))) return showFileError('File ini bukan CSV yang bisa dibaca. Simpan dulu sebagai CSV dari Excel atau aplikasi broker.');
+      const table = parseCsv(text, detectDelimiter(text));
+      if (table.length < 2 || Math.max(...table.map(r => r.length)) < 2) return showFileError('File ini bukan CSV yang bisa dibaca.');
+      let headerRow = 0;
+      for (let i = 0; i < Math.min(10, table.length); i++) {
+        if (knownHeaderCount(table[i]) >= 2) { headerRow = i; break; }
+      }
+      imp = { table, headerRow, headers: [], map: {}, fixedCategory: '', fixedCapital: '' };
+      if (table.length - headerRow - 1 > IMPORT_MAX_ROWS) {
+        imp = null;
+        return showFileError('File berisi lebih dari ' + IMPORT_MAX_ROWS + ' baris. Pecah jadi beberapa file.');
+      }
+      const opts = [];
+      for (let i = 0; i < Math.min(10, table.length - 1); i++) opts.push('<option value="' + i + '">' + (i + 1) + '</option>');
+      $('opt-header').innerHTML = opts.join('');
+      $('opt-header').value = String(headerRow);
+      $('opt-date').value = 'auto';
+      $('opt-decimal').value = 'auto';
+      setHeaderRow(headerRow);
+    }
+
+    function setHeaderRow(row) {
+      imp.headerRow = row;
+      const width = Math.max(...imp.table.map(r => r.length));
+      imp.headers = Array.from({ length: width }, (_, i) => (imp.table[row][i] || '').trim());
+      const saved = loadSavedMap(imp.headers);
+      imp.map = autoMap(imp.headers);
+      if (saved) for (const [f] of IMPORT_FIELDS) if (f in saved) imp.map[f] = saved[f] === null || saved[f] < width ? saved[f] : null;
+      renderMapping();
+      $('map-section').classList.remove('hidden');
+      $('preview-section').classList.remove('hidden');
+      schedulePreview(0);
+    }
+
+    function columnLabel(i) {
+      const h = imp.headers[i];
+      if (!h) return 'Kolom ' + (i + 1);
+      const dup = imp.headers.filter(x => normHeader(x) === normHeader(h)).length > 1;
+      return dup ? h + ' (kolom ' + (i + 1) + ')' : h;
+    }
+
+    function renderMapping() {
+      const cols = imp.headers.map((_, i) => i);
+      $('map-grid').innerHTML = IMPORT_FIELDS.map(([field, label]) => {
+        const options = '<option value="">Tidak dipakai</option>' + cols.map(i =>
+          '<option value="' + i + '"' + (imp.map[field] === i ? ' selected' : '') + '>' + esc(columnLabel(i)) + '</option>').join('');
+        let fixed = '';
+        if (field === 'category') {
+          fixed = '<select data-fixed="category" aria-label="Kategori sama untuk semua trade" class="field' + (imp.map.category === null ? '' : ' hidden') + '">' +
+            '<option value="">Sama untuk semua trade</option>' +
+            ['forex', 'saham', 'kripto'].map(c => '<option value="' + c + '"' + (imp.fixedCategory === c ? ' selected' : '') + '>' + c.charAt(0).toUpperCase() + c.slice(1) + '</option>').join('') +
+            '</select>';
+        } else if (field === 'capital') {
+          fixed = '<input data-fixed="capital" type="text" inputmode="decimal" placeholder="Sama untuk semua trade" aria-label="Modal sama untuk semua trade" value="' + esc(imp.fixedCapital) + '" class="field num' + (imp.map.capital === null ? '' : ' hidden') + '">';
+        }
+        const req = field === 'trade_date' || field === 'instrument';
+        return '<label class="flex flex-col gap-1 text-sm"><span class="text-zinc-300">' + esc(label) + (req ? ' <span class="text-red-300">*</span>' : '') + '</span>' +
+          '<select data-field="' + field + '" class="field">' + options + '</select>' + fixed + '</label>';
+      }).join('');
+    }
+
+    function schedulePreview(delay) {
+      clearTimeout(impTimer);
+      impPending = true;
+      updateImportButton();
+      impTimer = setTimeout(runPreview, delay === undefined ? 400 : delay);
+    }
+
+    function mappedRequired() {
+      return imp && imp.map.trade_date !== null && imp.map.instrument !== null;
+    }
+
+    async function runPreview() {
+      if (!imp) return;
+      const seq = ++impSeq;
+      $('import-error').classList.add('hidden');
+      const ready = mappedRequired();
+      $('preview-hint').classList.toggle('hidden', ready);
+      if (!ready) {
+        impRows = []; impCounts = null; impPending = false;
+        renderPreview();
+        return;
+      }
+      const rows = buildImportRows();
+      const send = rows.filter(r => !r.status);
+      $('preview-counts').textContent = 'Memeriksa...';
+      try {
+        let server = { rows: [] };
+        if (send.length) {
+          const res = await fetch('/api/trades/import', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...headers },
+            body: JSON.stringify({ rows: send.map(r => r.trade), dryRun: true }),
+          });
+          server = await res.json().catch(() => ({}));
+          if (seq !== impSeq) return;
+          if (!res.ok) throw new Error(server.error || 'Gagal memeriksa file');
+        }
+        if (seq !== impSeq) return;
+        send.forEach((r, i) => { const s = server.rows[i] || {}; r.status = s.status || 'invalid'; r.reason = s.reason || null; });
+        impRows = rows;
+        impCounts = { new: 0, duplicate: 0, invalid: 0 };
+        for (const r of rows) impCounts[r.status]++;
+        impPending = false;
+        renderPreview();
+      } catch (err) {
+        if (seq !== impSeq) return;
+        impRows = []; impCounts = null; impPending = false;
+        renderPreview();
+        $('preview-counts').textContent = '';
+        $('import-error').textContent = (err.message || 'Gagal memeriksa file') + '. Periksa koneksi lalu coba lagi.';
+        $('import-error').classList.remove('hidden');
+      }
+    }
+
+    function renderPreview() {
+      const c = impCounts;
+      $('preview-counts').textContent = c ? c.new + ' baru, ' + c.duplicate + ' duplikat, ' + c.invalid + ' tidak valid' : '';
+      const shown = impRows.slice(0, PREVIEW_ROWS).map(r => ({ r, c: calc(r.trade) }));
+      const why = (r) => r.reason ? ' title="' + esc(r.reason) + '"' : '';
+      const reasonText = (r) => r.reason && r.status !== 'new' ? '<span class="text-xs text-zinc-500">' + esc(r.reason) + '</span>' : '';
+      $('preview-list').innerHTML = shown.map(({ r, c }) =>
+        '<li class="px-4 py-3 flex flex-col gap-1.5">' +
+          '<div class="flex items-center justify-between gap-2">' +
+            '<span class="font-semibold">' + esc(r.trade.instrument || '-') + ' <span class="text-sm font-normal">' + positionLabel(r.trade.position) + '</span></span>' +
+            '<span' + why(r) + '>' + STATUS_PILL[r.status] + '</span>' +
+          '</div>' +
+          '<div class="flex items-center justify-between gap-2 text-sm">' +
+            '<span class="text-zinc-400">Baris ' + r.line + ' · ' + esc(fmtDate(r.trade.trade_date)) + (r.trade.entry_time ? ' ' + esc(r.trade.entry_time) : '') + '</span>' +
+            '<span class="font-mono ' + resultClass(c.result) + '">' + fmtMoney(c.result) + '</span>' +
+          '</div>' +
+          '<div class="flex items-center justify-between gap-2">' + reasonText(r) + (r.status === 'invalid' ? '' : '<span class="ml-auto">' + badge(c) + '</span>') + '</div>' +
+        '</li>'
+      ).join('');
+      $('preview-tbody').innerHTML = shown.map(({ r, c }) =>
+        '<tr>' +
+          '<td class="px-3 py-2 font-mono text-zinc-400">' + r.line + '</td>' +
+          '<td class="px-3 py-2 whitespace-nowrap"><span' + why(r) + '>' + STATUS_PILL[r.status] + '</span>' + (r.reason && r.status !== 'new' ? '<br>' + reasonText(r) : '') + '</td>' +
+          '<td class="px-3 py-2 whitespace-nowrap">' + esc(fmtDate(r.trade.trade_date)) + '</td>' +
+          '<td class="px-3 py-2 whitespace-nowrap font-semibold">' + esc(r.trade.instrument || '-') + '</td>' +
+          '<td class="px-3 py-2">' + positionLabel(r.trade.position) + '</td>' +
+          '<td class="px-3 py-2 text-right font-mono">' + fmtPrice(r.trade.entry_price) + '</td>' +
+          '<td class="px-3 py-2 text-right font-mono">' + fmtPrice(r.trade.exit_price) + '</td>' +
+          '<td class="px-3 py-2 text-right font-mono">' + fmtPrice(r.trade.lot_size) + '</td>' +
+          '<td class="px-3 py-2 text-right font-mono whitespace-nowrap ' + resultClass(c.result) + '">' + fmtMoney(c.result) + '</td>' +
+          '<td class="px-3 py-2 text-center whitespace-nowrap">' + (r.status === 'invalid' ? '-' : badge(c)) + '</td>' +
+        '</tr>'
+      ).join('');
+      const more = impRows.length - shown.length;
+      $('preview-more').textContent = more > 0 ? 'Menampilkan ' + shown.length + ' dari ' + impRows.length + ' baris.' : '';
+      $('preview-more').classList.toggle('hidden', more <= 0);
+      updateImportButton();
+    }
+
+    function updateImportButton() {
+      const n = impCounts && mappedRequired() ? impCounts.new : 0;
+      $('do-import-btn').textContent = impBusy ? 'Mengimpor...' : 'Impor ' + n + ' trade';
+      $('do-import-btn').disabled = impBusy || impPending || !n;
+    }
+
+    async function doImport() {
+      if (impBusy || !impCounts || !impCounts.new) return;
+      const rows = buildImportRows().filter(r => !r.status).map(r => r.trade);
+      const clientInvalid = impRows.length - rows.length;
+      impBusy = true;
+      updateImportButton();
+      $('import-error').classList.add('hidden');
+      try {
+        const res = await fetch('/api/trades/import', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...headers },
+          body: JSON.stringify({ rows, dryRun: false }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || 'Gagal mengimpor trade');
+        saveMap();
+        const skipped = [];
+        if (data.duplicate) skipped.push(data.duplicate + ' duplikat');
+        if (data.invalid + clientInvalid) skipped.push((data.invalid + clientInvalid) + ' baris tidak valid');
+        const note = data.imported + ' trade diimpor.' + (skipped.length ? ' ' + skipped.join(' dan ') + ' dilewati.' : '');
+        resetImport();
+        await loadTrades();
+        showView('list');
+        $('import-note').textContent = note;
+        $('import-note').classList.remove('hidden');
+      } catch (err) {
+        $('import-error').textContent = (err.message || 'Gagal mengimpor trade') + '. Coba lagi.';
+        $('import-error').classList.remove('hidden');
+      } finally {
+        impBusy = false;
+        updateImportButton();
+      }
+    }
+
+    $('csv-input').addEventListener('change', (e) => handleFile(e.target.files[0]));
+    $('drop-zone').addEventListener('dragover', (e) => { e.preventDefault(); $('drop-zone').classList.add('border-violet-500'); });
+    $('drop-zone').addEventListener('dragleave', () => $('drop-zone').classList.remove('border-violet-500'));
+    $('drop-zone').addEventListener('drop', (e) => {
+      e.preventDefault();
+      $('drop-zone').classList.remove('border-violet-500');
+      handleFile(e.dataTransfer.files[0]);
+    });
+    $('map-grid').addEventListener('change', (e) => {
+      if (!imp) return;
+      const el = e.target;
+      if (el.dataset.field) {
+        imp.map[el.dataset.field] = el.value === '' ? null : Number(el.value);
+        if (el.dataset.field === 'category' || el.dataset.field === 'capital') {
+          const fixed = $('map-grid').querySelector('[data-fixed="' + el.dataset.field + '"]');
+          if (fixed) fixed.classList.toggle('hidden', el.value !== '');
+        }
+      } else if (el.dataset.fixed === 'category') imp.fixedCategory = el.value;
+      schedulePreview();
+    });
+    $('map-grid').addEventListener('input', (e) => {
+      if (imp && e.target.dataset.fixed === 'capital') { imp.fixedCapital = e.target.value; schedulePreview(); }
+    });
+    $('opt-date').addEventListener('change', () => schedulePreview());
+    $('opt-decimal').addEventListener('change', () => schedulePreview());
+    $('opt-header').addEventListener('change', (e) => { if (imp) setHeaderRow(Number(e.target.value)); });
+    $('do-import-btn').addEventListener('click', doImport);
+    $('import-btn').addEventListener('click', openImport);
+    $('empty-import-btn').addEventListener('click', openImport);
+    $('import-back-btn').addEventListener('click', () => { resetImport(); showView('list'); });
 
     loadTrades();
   </script>

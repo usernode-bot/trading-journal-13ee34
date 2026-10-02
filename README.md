@@ -14,6 +14,14 @@ a planned RR of at least 1:2. UI copy is in Bahasa Indonesia.
 - `public/index.html`: the whole UI (list, desktop table, entry form). All
   derived numbers (risk $, risk %, R, planned/actual RR, discipline badge)
   are computed client-side in `calc()` from the stored fields.
+- CSV import (`Impor CSV`): the browser parses the broker's CSV, maps its
+  columns onto trade fields from common header names (the user can fix the
+  mapping; it is remembered per header set in localStorage) and shows a
+  preview. `POST /api/trades/import` revalidates every row with
+  `cleanTrade()` and classifies it as new, duplicate or invalid
+  (`dryRun: true` for the preview, otherwise it inserts the new rows in one
+  transaction). The broker's ticket is stored in `broker_ref`, unique per
+  user. `public/contoh-impor.csv` is a sample file in MetaTrader's shape.
 - On a staging preview, `/?demo=1` shows three read-only demo trades so the
   list and badges can be reviewed on an empty database.
 - Styling: Tailwind, precompiled by `npm run build` during image creation.

@@ -48,6 +48,24 @@
       "impact": [
         "public/index.html"
       ]
+    },
+    {
+      "id": "journal.import",
+      "name": "Journal offers CSV import",
+      "path": "/",
+      "expectSelector": "#import-btn",
+      "visual": true,
+      "impact": [
+        "public/index.html",
+        "public/contoh-impor.csv",
+        "server.js",
+        "styles/**"
+      ]
+    },
+    {
+      "name": "Empty journal offers CSV import",
+      "path": "/",
+      "expectText": "Impor dari CSV"
     }
   ],
   "visibility": {
