@@ -36,6 +36,7 @@
   var DEFAULT_LANG = 'id';
   var T = {
   id: {
+    pnl_title: 'PNL', pnl_closed: 'Trade tutup',
     lang: 'Bahasa',
     nav_jurnal: 'Jurnal', nav_broker: 'Broker', nav_sinyal: 'Sinyal', nav_vip: 'VIP', nav_aria: 'Menu utama',
     l_title: 'Jurnal trading', l_export: 'Ekspor CSV', l_import: 'Impor CSV', l_new: 'Catat trade',
@@ -144,6 +145,7 @@
     sig_r5: 'Contoh: pullback ke area demand 64.000, volume beli meningkat.',
   },
   en: {
+    pnl_title: 'PNL', pnl_closed: 'Closed trades',
     lang: 'Language',
     nav_jurnal: 'Journal', nav_broker: 'Broker', nav_sinyal: 'Signals', nav_vip: 'VIP', nav_aria: 'Main menu',
     l_title: 'Trading journal', l_export: 'Export CSV', l_import: 'Import CSV', l_new: 'Log trade',
@@ -252,6 +254,7 @@
     sig_r5: 'Example: pullback to the demand area at 64,000, buy volume rising.',
   },
   ms: {
+    pnl_title: 'PNL', pnl_closed: 'Dagangan ditutup',
     lang: 'Bahasa',
     nav_jurnal: 'Jurnal', nav_broker: 'Broker', nav_sinyal: 'Isyarat', nav_vip: 'VIP', nav_aria: 'Menu utama',
     l_title: 'Jurnal dagangan', l_export: 'Eksport CSV', l_import: 'Import CSV', l_new: 'Catat dagangan',
@@ -360,6 +363,7 @@
     sig_r5: 'Contoh: pullback ke kawasan demand 64.000, volum beli meningkat.',
   },
   es: {
+    pnl_title: 'PNL', pnl_closed: 'Operaciones cerradas',
     lang: 'Idioma',
     nav_jurnal: 'Diario', nav_broker: 'Bróker', nav_sinyal: 'Señales', nav_vip: 'VIP', nav_aria: 'Menú principal',
     l_title: 'Diario de trading', l_export: 'Exportar CSV', l_import: 'Importar CSV', l_new: 'Registrar operación',
@@ -468,6 +472,7 @@
     sig_r5: 'Ejemplo: retroceso a la zona de demanda 64.000, volumen de compra al alza.',
   },
   fr: {
+    pnl_title: 'PNL', pnl_closed: 'Trades clôturés',
     lang: 'Langue',
     nav_jurnal: 'Journal', nav_broker: 'Broker', nav_sinyal: 'Signaux', nav_vip: 'VIP', nav_aria: 'Menu principal',
     l_title: 'Journal de trading', l_export: 'Exporter en CSV', l_import: 'Importer un CSV', l_new: 'Ajouter un trade',
@@ -576,6 +581,7 @@
     sig_r5: 'Exemple : pullback vers la zone de demande 64.000, volume d\'achat en hausse.',
   },
   de: {
+    pnl_title: 'PNL', pnl_closed: 'Geschlossene Trades',
     lang: 'Sprache',
     nav_jurnal: 'Journal', nav_broker: 'Broker', nav_sinyal: 'Signale', nav_vip: 'VIP', nav_aria: 'Hauptmenü',
     l_title: 'Trading-Journal', l_export: 'CSV exportieren', l_import: 'CSV importieren', l_new: 'Trade erfassen',
@@ -684,6 +690,7 @@
     sig_r5: 'Beispiel: Pullback in die Nachfragezone 64.000, Kaufvolumen steigt.',
   },
   pt: {
+    pnl_title: 'PNL', pnl_closed: 'Trades fechados',
     lang: 'Idioma',
     nav_jurnal: 'Diário', nav_broker: 'Corretora', nav_sinyal: 'Sinais', nav_vip: 'VIP', nav_aria: 'Menu principal',
     l_title: 'Diário de trading', l_export: 'Exportar CSV', l_import: 'Importar CSV', l_new: 'Registrar trade',
@@ -792,6 +799,7 @@
     sig_r5: 'Exemplo: pullback para a zona de demanda 64.000, volume de compra subindo.',
   },
   it: {
+    pnl_title: 'PNL', pnl_closed: 'Trade chiusi',
     lang: 'Lingua',
     nav_jurnal: 'Diario', nav_broker: 'Broker', nav_sinyal: 'Segnali', nav_vip: 'VIP', nav_aria: 'Menu principale',
     l_title: 'Diario di trading', l_export: 'Esporta CSV', l_import: 'Importa CSV', l_new: 'Registra trade',
@@ -900,6 +908,7 @@
     sig_r5: 'Esempio: pullback verso la zona di domanda 64.000, volume di acquisto in aumento.',
   },
   nl: {
+    pnl_title: 'PNL', pnl_closed: 'Gesloten trades',
     lang: 'Taal',
     nav_jurnal: 'Dagboek', nav_broker: 'Broker', nav_sinyal: 'Signalen', nav_vip: 'VIP', nav_aria: 'Hoofdmenu',
     l_title: 'Tradingdagboek', l_export: 'CSV exporteren', l_import: 'CSV importeren', l_new: 'Trade vastleggen',
@@ -1008,6 +1017,7 @@
     sig_r5: 'Voorbeeld: pullback naar het vraaggebied 64.000, koopvolume stijgt.',
   },
   pl: {
+    pnl_title: 'PNL', pnl_closed: 'Zamknięte transakcje',
     lang: 'Język',
     nav_jurnal: 'Dziennik', nav_broker: 'Broker', nav_sinyal: 'Sygnały', nav_vip: 'VIP', nav_aria: 'Menu główne',
     l_title: 'Dziennik tradingowy', l_export: 'Eksport CSV', l_import: 'Import CSV', l_new: 'Zapisz transakcję',
@@ -1116,6 +1126,7 @@
     sig_r5: 'Przykład: korekta do strefy popytu 64.000, wolumen kupna rośnie.',
   },
   tr: {
+    pnl_title: 'PNL', pnl_closed: 'Kapanan işlem',
     lang: 'Dil',
     nav_jurnal: 'Günlük', nav_broker: 'Aracı Kurum', nav_sinyal: 'Sinyaller', nav_vip: 'VIP', nav_aria: 'Ana menü',
     l_title: 'Trading günlüğü', l_export: 'CSV dışa aktar', l_import: 'CSV içe aktar', l_new: 'İşlem kaydet',
@@ -1224,6 +1235,7 @@
     sig_r5: 'Örnek: 64.000 talep bölgesine geri çekilme, alım hacmi artıyor.',
   },
   ru: {
+    pnl_title: 'PNL', pnl_closed: 'Закрытые сделки',
     lang: 'Язык',
     nav_jurnal: 'Журнал', nav_broker: 'Брокер', nav_sinyal: 'Сигналы', nav_vip: 'VIP', nav_aria: 'Главное меню',
     l_title: 'Торговый журнал', l_export: 'Экспорт CSV', l_import: 'Импорт CSV', l_new: 'Записать сделку',
@@ -1332,6 +1344,7 @@
     sig_r5: 'Пример: откат к зоне спроса 64.000, объём покупок растёт.',
   },
   ar: {
+    pnl_title: 'PNL', pnl_closed: 'صفقات مغلقة',
     lang: 'اللغة',
     nav_jurnal: 'السجل', nav_broker: 'الوسيط', nav_sinyal: 'الإشارات', nav_vip: 'VIP', nav_aria: 'القائمة الرئيسية',
     l_title: 'سجل التداول', l_export: 'تصدير CSV', l_import: 'استيراد CSV', l_new: 'تسجيل صفقة',
@@ -1440,6 +1453,7 @@
     sig_r5: 'مثال: ارتداد إلى منطقة الطلب 64.000، وارتفاع حجم الشراء.',
   },
   hi: {
+    pnl_title: 'PNL', pnl_closed: 'बंद ट्रेड',
     lang: 'भाषा',
     nav_jurnal: 'जर्नल', nav_broker: 'ब्रोकर', nav_sinyal: 'संकेत', nav_vip: 'VIP', nav_aria: 'मुख्य मेनू',
     l_title: 'ट्रेडिंग जर्नल', l_export: 'CSV निर्यात', l_import: 'CSV आयात', l_new: 'ट्रेड दर्ज करें',
@@ -1548,6 +1562,7 @@
     sig_r5: 'उदाहरण: 64.000 डिमांड क्षेत्र तक पुलबैक, खरीद वॉल्यूम बढ़ रहा।',
   },
   th: {
+    pnl_title: 'PNL', pnl_closed: 'เทรดที่ปิดแล้ว',
     lang: 'ภาษา',
     nav_jurnal: 'สมุดบันทึก', nav_broker: 'โบรกเกอร์', nav_sinyal: 'สัญญาณ', nav_vip: 'VIP', nav_aria: 'เมนูหลัก',
     l_title: 'สมุดบันทึกการเทรด', l_export: 'ส่งออก CSV', l_import: 'นำเข้า CSV', l_new: 'บันทึกเทรด',
@@ -1656,6 +1671,7 @@
     sig_r5: 'ตัวอย่าง: ย่อลงที่โซนอุปสงค์ 64.000 และวอลุ่มซื้อเพิ่มขึ้น',
   },
   vi: {
+    pnl_title: 'PNL', pnl_closed: 'Giao dịch đã đóng',
     lang: 'Ngôn ngữ',
     nav_jurnal: 'Nhật ký', nav_broker: 'Môi giới', nav_sinyal: 'Tín hiệu', nav_vip: 'VIP', nav_aria: 'Menu chính',
     l_title: 'Nhật ký giao dịch', l_export: 'Xuất CSV', l_import: 'Nhập CSV', l_new: 'Ghi giao dịch',
@@ -1764,6 +1780,7 @@
     sig_r5: 'Ví dụ: hồi về vùng cầu 64.000, khối lượng mua tăng.',
   },
   'zh-CN': {
+    pnl_title: 'PNL', pnl_closed: '已平仓交易',
     lang: '语言',
     nav_jurnal: '日志', nav_broker: '券商', nav_sinyal: '信号', nav_vip: 'VIP', nav_aria: '主菜单',
     l_title: '交易日志', l_export: '导出 CSV', l_import: '导入 CSV', l_new: '记录交易',
@@ -1872,6 +1889,7 @@
     sig_r5: '示例：回撤至 64.000 需求区，买入量增加。',
   },
   'zh-TW': {
+    pnl_title: 'PNL', pnl_closed: '已平倉交易',
     lang: '語言',
     nav_jurnal: '日誌', nav_broker: '券商', nav_sinyal: '訊號', nav_vip: 'VIP', nav_aria: '主選單',
     l_title: '交易日誌', l_export: '匯出 CSV', l_import: '匯入 CSV', l_new: '記錄交易',
@@ -1980,6 +1998,7 @@
     sig_r5: '範例：回撤至 64.000 需求區，買進量增加。',
   },
   ja: {
+    pnl_title: 'PNL', pnl_closed: '決済済みトレード',
     lang: '言語',
     nav_jurnal: 'ジャーナル', nav_broker: 'ブローカー', nav_sinyal: 'シグナル', nav_vip: 'VIP', nav_aria: 'メインメニュー',
     l_title: 'トレードジャーナル', l_export: 'CSVエクスポート', l_import: 'CSVインポート', l_new: 'トレードを記録',
@@ -2088,6 +2107,7 @@
     sig_r5: '例：64.000の需要ゾーンへの押し戻し、買い出来高の増加。',
   },
   ko: {
+    pnl_title: 'PNL', pnl_closed: '종료된 트레이드',
     lang: '언어',
     nav_jurnal: '저널', nav_broker: '브로커', nav_sinyal: '시그널', nav_vip: 'VIP', nav_aria: '메인 메뉴',
     l_title: '트레이딩 저널', l_export: 'CSV 내보내기', l_import: 'CSV 가져오기', l_new: '거래 기록',

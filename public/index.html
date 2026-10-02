@@ -146,6 +146,17 @@
       <p id="import-note" class="hidden px-1 text-sm text-buy" role="status"></p>
       <p data-i18n="l_disc_note" class="px-1 text-xs text-muted-2">Disiplin: ✅ jika risiko maksimal 1% modal, RR rencana minimal 1:2 dan trade sesuai plan. ❌ jika salah satunya dilanggar. Risiko bertanda * dihitung otomatis (perkiraan).</p>
 
+      <!-- Kartu PNL: angka laba/rugi realized yang menonjol, di atas
+           ringkasan lengkap. Muncul hanya saat ada trade yang sudah tutup. -->
+      <section id="pnl-card" class="hidden rounded-xl border border-line p-4 flex flex-col gap-4" aria-labelledby="pnl-title">
+        <h2 id="pnl-title" data-i18n="pnl_title" class="text-sm font-semibold text-muted">PNL</h2>
+        <p id="pnl-pl" class="font-mono text-3xl font-bold text-ink-2">-</p>
+        <dl class="grid grid-cols-2 gap-x-4 gap-y-3">
+          <div><dt data-i18n="pnl_closed" class="text-xs text-muted-2">Trade tutup</dt><dd id="pnl-closed" class="font-mono text-lg">-</dd></div>
+          <div><dt data-i18n="s_winrate" class="text-xs text-muted-2">Win rate</dt><dd id="pnl-winrate" class="font-mono text-lg">-</dd><dd id="pnl-winrate-sub" class="text-xs text-muted-2"></dd></div>
+        </dl>
+      </section>
+
       <section id="summary" class="hidden rounded-xl border border-line p-4 flex flex-col gap-4" aria-labelledby="summary-title">
         <h2 id="summary-title" data-i18n="s_title" class="text-sm font-semibold text-muted">Ringkasan</h2>
         <dl class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-3">
@@ -920,8 +931,16 @@
       };
     }
 
+    let pnlReady = false;   // at least one closed trade: the PNL card has numbers to show
+
     function renderSummary() {
       const s = summarize(trades);
+      pnlReady = s.withResult > 0;
+      $('pnl-pl').textContent = fmtMoney(s.totalPL);
+      $('pnl-pl').className = 'font-mono text-3xl font-bold ' + resultClass(s.totalPL);
+      $('pnl-closed').textContent = String(s.withResult);
+      $('pnl-winrate').textContent = fmtPct(s.winRate);
+      $('pnl-winrate-sub').textContent = s.withResult ? tr('s_win_sub', { n: s.wins, m: s.withResult }) : '';
       $('sum-total').textContent = String(s.total);
       $('sum-winrate').textContent = fmtPct(s.winRate);
       $('sum-winrate-sub').textContent = s.withResult ? tr('s_win_sub', { n: s.wins, m: s.withResult }) : '';
@@ -1018,6 +1037,9 @@
     function showListState(state) {
       listState = state;
       $('summary').classList.toggle('hidden', state !== 'list' && state !== 'empty');
+      // The PNL card needs closed trades, so it stays hidden on an empty
+      // journal where the summary itself shows dashes.
+      $('pnl-card').classList.toggle('hidden', (state !== 'list' && state !== 'empty') || !pnlReady);
       $('calc-tool').classList.toggle('hidden', state !== 'list' && state !== 'empty');
       $('export-btn').classList.toggle('hidden', state !== 'list');
       $('list-loading').classList.toggle('hidden', state !== 'loading');

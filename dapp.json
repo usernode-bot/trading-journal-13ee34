@@ -87,6 +87,28 @@
       ]
     },
     {
+      "id": "journal.pnl",
+      "name": "PNL card shows total P&L, win rate and closed trades",
+      "path": "/?demo=1",
+      "expectSelector": "#pnl-card:not(.hidden)",
+      "expectText": "-$100,00",
+      "visual": true,
+      "impact": [
+        "public/index.html",
+        "public/i18n.js"
+      ]
+    },
+    {
+      "name": "PNL card switches to English",
+      "path": "/?demo=1&lang=en",
+      "expectText": "Closed trades"
+    },
+    {
+      "name": "Kartu PNL tersembunyi saat jurnal kosong",
+      "path": "/",
+      "expectSelector": "#pnl-card.hidden"
+    },
+    {
       "id": "journal.import",
       "name": "Journal offers CSV import",
       "path": "/",
