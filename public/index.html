@@ -153,9 +153,10 @@
         <p id="sum-excluded" class="hidden text-xs text-muted-2"></p>
 
         <div class="flex flex-col gap-2">
-          <h3 class="text-xs font-semibold text-muted">Grafik equity</h3>
-          <p id="equity-note" class="text-xs text-muted-2">Grafik equity muncul setelah 2 trade punya hasil.</p>
+          <h3 class="text-xs font-semibold text-muted">Grafik profit/loss</h3>
+          <p id="equity-note" class="text-xs text-muted-2">Belum ada trade. Catat trade dan isi Hasil ($), grafik profit/loss kumulatif akan muncul di sini.</p>
           <div id="equity-chart" class="hidden"></div>
+          <div id="equity-dates" class="hidden flex justify-between gap-3 text-xs text-muted-2"><span id="eq-first-date"></span><span id="eq-last-date"></span></div>
           <dl id="equity-stats" class="hidden grid grid-cols-3 gap-3 text-sm">
             <div><dt class="text-xs text-muted-2">Tertinggi</dt><dd id="eq-high" class="font-mono">-</dd></div>
             <div><dt class="text-xs text-muted-2">Terendah</dt><dd id="eq-low" class="font-mono">-</dd></div>
@@ -812,37 +813,60 @@
       $('sum-pl').className = 'font-mono text-lg ' + resultClass(s.totalPL);
       $('sum-avg-rr').textContent = fmtRR(s.avgPlannedRR);
       $('sum-rr-sub').textContent = s.plannedRRCount ? 'Dari ' + s.plannedRRCount + ' trade dengan entry, SL dan TP' : '';
-      renderEquityChart(s.equity);
+      renderEquityChart(s.equity, s.total);
       renderCategoryTable(s.byCategory);
     }
 
-    // Cumulative P/L as one inline SVG line with a thin area under it and a
-    // dashed zero line; shown from 2 trades with a result.
-    function renderEquityChart(points) {
-      const chart = $('equity-chart'), stats = $('equity-stats'), note = $('equity-note');
-      const ok = points.length >= 2;
+    // Cumulative P/L over trade date as one inline SVG line starting at $0,
+    // green where the running total is above zero and red-orange below it
+    // (the same line and area drawn twice, each clipped to one side of the
+    // dashed zero line). Shown from the first trade with a result.
+    function renderEquityChart(points, totalTrades) {
+      const chart = $('equity-chart'), stats = $('equity-stats'), note = $('equity-note'), dates = $('equity-dates');
+      const ok = points.length >= 1;
       chart.classList.toggle('hidden', !ok);
       stats.classList.toggle('hidden', !ok);
+      dates.classList.toggle('hidden', !ok);
       note.classList.toggle('hidden', ok);
-      if (!ok) { chart.innerHTML = ''; return; }
+      if (!ok) {
+        chart.innerHTML = '';
+        note.textContent = totalTrades
+          ? 'Belum ada trade dengan hasil. Isi Hasil ($) pada trade yang sudah selesai, grafik profit/loss kumulatif akan muncul di sini.'
+          : 'Belum ada trade. Catat trade dan isi Hasil ($), grafik profit/loss kumulatif akan muncul di sini.';
+        return;
+      }
       const vals = points.map(p => p.cum);
       const hi = Math.max(...vals), lo = Math.min(...vals), cur = vals[vals.length - 1];
+      const series = [0].concat(vals);
       let top = Math.max(0, hi), bottom = Math.min(0, lo);
       if (top === bottom) { top += 1; bottom -= 1; }
       const W = 320, H = 120, P = 8;
-      const x = i => P + i * (W - 2 * P) / (vals.length - 1);
+      const x = i => P + i * (W - 2 * P) / (series.length - 1);
       const y = v => P + (top - v) * (H - 2 * P) / (top - bottom);
       const f = n => n.toFixed(1);
-      const line = vals.map((v, i) => (i ? 'L' : 'M') + f(x(i)) + ' ' + f(y(v))).join(' ');
-      const area = line + ' L' + f(x(vals.length - 1)) + ' ' + f(y(0)) + ' L' + f(x(0)) + ' ' + f(y(0)) + ' Z';
-      const dot = (i, v, cls) => '<circle cx="' + f(x(i)) + '" cy="' + f(y(v)) + '" r="3" class="' + cls + '" fill="currentColor"/>';
+      const zero = f(y(0));
+      const line = series.map((v, i) => (i ? 'L' : 'M') + f(x(i)) + ' ' + f(y(v))).join(' ');
+      const area = line + ' L' + f(x(series.length - 1)) + ' ' + zero + ' L' + f(x(0)) + ' ' + zero + ' Z';
+      const signClass = v => v < 0 ? 'text-sell' : 'text-buy';
+      const side = (sign, cls) =>
+        '<g clip-path="url(#pl-clip-' + sign + ')" data-pl="' + sign + '">' +
+          '<path d="' + area + '" class="' + cls + '" fill="currentColor" fill-opacity="0.12"/>' +
+          '<path d="' + line + '" class="' + cls + '" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>' +
+        '</g>';
+      const dot = (i, v) => '<circle cx="' + f(x(i + 1)) + '" cy="' + f(y(v)) + '" r="3" class="' + signClass(v) + '" fill="currentColor"/>';
       chart.innerHTML = '<svg viewBox="0 0 320 120" class="block w-full h-auto" role="img" aria-label="' +
-          esc('Grafik equity: tertinggi ' + fmtMoney(hi) + ', terendah ' + fmtMoney(lo) + ', saat ini ' + fmtMoney(cur)) + '">' +
-        '<line x1="' + P + '" x2="' + (W - P) + '" y1="' + f(y(0)) + '" y2="' + f(y(0)) + '" class="text-line-2" stroke="currentColor" stroke-dasharray="3 3" vector-effect="non-scaling-stroke"/>' +
-        '<path d="' + area + '" class="text-accent" fill="currentColor" fill-opacity="0.12"/>' +
-        '<path d="' + line + '" class="text-accent" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>' +
-        dot(vals.indexOf(hi), hi, 'text-buy') + dot(vals.indexOf(lo), lo, 'text-sell') + dot(vals.length - 1, cur, 'text-accent') +
+          esc('Grafik profit/loss kumulatif dari ' + fmtDate(points[0].date) + ' sampai ' + fmtDate(points[points.length - 1].date) +
+            ': tertinggi ' + fmtMoney(hi) + ', terendah ' + fmtMoney(lo) + ', saat ini ' + fmtMoney(cur)) + '">' +
+        '<defs>' +
+          '<clipPath id="pl-clip-profit"><rect x="0" y="0" width="' + W + '" height="' + zero + '"/></clipPath>' +
+          '<clipPath id="pl-clip-loss"><rect x="0" y="' + zero + '" width="' + W + '" height="' + f(H - y(0)) + '"/></clipPath>' +
+        '</defs>' +
+        '<line x1="' + P + '" x2="' + (W - P) + '" y1="' + zero + '" y2="' + zero + '" class="text-line-2" stroke="currentColor" stroke-dasharray="3 3" vector-effect="non-scaling-stroke"/>' +
+        side('profit', 'text-buy') + side('loss', 'text-sell') +
+        dot(vals.indexOf(hi), hi) + dot(vals.indexOf(lo), lo) + dot(vals.length - 1, cur) +
         '</svg>';
+      $('eq-first-date').textContent = fmtDate(points[0].date);
+      $('eq-last-date').textContent = fmtDate(points[points.length - 1].date);
       for (const [id, v] of [['eq-high', hi], ['eq-low', lo], ['eq-cur', cur]]) {
         $(id).textContent = fmtMoney(v);
         $(id).className = 'font-mono ' + resultClass(v);
