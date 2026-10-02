@@ -66,6 +66,73 @@
       "name": "Empty journal offers CSV import",
       "path": "/",
       "expectText": "Impor dari CSV"
+    },
+    {
+      "id": "nav.bottom",
+      "name": "Bottom navigation shows the four tabs",
+      "path": "/",
+      "expectSelector": "#tab-sinyal",
+      "visual": true,
+      "impact": [
+        "public/index.html",
+        "styles/**",
+        "tailwind.config.js"
+      ]
+    },
+    {
+      "name": "Disclaimer footer tampil",
+      "path": "/",
+      "expectText": "Trading berisiko tinggi"
+    },
+    {
+      "name": "Kalkulator lot tersedia di jurnal kosong",
+      "path": "/",
+      "expectText": "Kalkulator lot & risiko"
+    },
+    {
+      "id": "journal.equity",
+      "name": "Summary shows the equity chart from 2 trades",
+      "path": "/?demo=1",
+      "expectSelector": "#equity-chart svg",
+      "visual": true,
+      "impact": [
+        "public/index.html"
+      ]
+    },
+    {
+      "name": "Rekap per kategori tampil",
+      "path": "/?demo=1",
+      "expectText": "Performa per kategori"
+    },
+    {
+      "name": "Jurnal menawarkan ekspor CSV",
+      "path": "/?demo=1",
+      "expectSelector": "#export-btn"
+    },
+    {
+      "id": "broker.cards",
+      "name": "Broker tab shows the Exness affiliate card",
+      "path": "/#/broker",
+      "expectText": "Link afiliasi",
+      "visual": true,
+      "impact": [
+        "public/index.html"
+      ]
+    },
+    {
+      "name": "Sinyal terkunci untuk pengguna Gratis",
+      "path": "/#/sinyal",
+      "expectText": "Daftar VIP"
+    },
+    {
+      "id": "vip.form",
+      "name": "VIP tab shows the signup form and contact card",
+      "path": "/#/vip",
+      "expectText": "Hubungi admin",
+      "visual": true,
+      "impact": [
+        "public/index.html"
+      ]
     }
   ],
   "visibility": {

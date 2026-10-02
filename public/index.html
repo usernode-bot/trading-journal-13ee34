@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="id" class="dark">
+<html lang="id">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   
   <script>
   // usernode-dev-console@1
@@ -65,6 +65,10 @@
   </script>
   <title>Trading journal</title>
   <link rel="icon" type="image/svg+xml" href="/logo.svg">
+  <!-- Sora with a system-ui fallback (tailwind.config.js fontFamily.sans). -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&display=swap" rel="stylesheet">
   <!-- Tailwind, PRECOMPILED for this app (was cdn.tailwindcss.com's
        in-browser engine plus an inline tailwind.config here). The config
        moved to tailwind.config.js in the repo root; npm run build compiles
@@ -88,63 +92,142 @@
        Another is the page's colour: the bridge reports this document's opaque
        ground to the shell (#1581), which is what makes the platform bar above
        the app take the app's tone instead of the viewer's theme (#1945). This
-       scaffold paints a dark page (bg-zinc-950 on the body element), so
+       scaffold paints a dark page (bg-canvas on the body element), so
        without this tag a brand-new app sits under a light bar. -->
   <script src="/usernode-bridge/v1/bridge.js"></script>
+  <script>
+    // Light/dark follows the viewer's platform theme (the bridge publishes
+    // the resolved value as usernode.theme); opened standalone it follows the
+    // OS. The colour tokens in styles/tailwind-input.css key off html.dark.
+    (function () {
+      var media = window.matchMedia('(prefers-color-scheme: dark)');
+      function applyTheme() {
+        var theme = (window.usernode && window.usernode.theme) || (media.matches ? 'dark' : 'light');
+        document.documentElement.classList.toggle('dark', theme === 'dark');
+        document.documentElement.style.colorScheme = theme;
+      }
+      applyTheme();
+      window.addEventListener('usernode:theme-changed', applyTheme);
+      media.addEventListener('change', applyTheme);
+    })();
+  </script>
 </head>
-<body class="bg-zinc-950 text-zinc-100 min-h-screen">
-  <main class="max-w-5xl mx-auto px-4 py-6 flex flex-col gap-6">
+<body class="bg-canvas text-ink min-h-screen">
+  <!-- Safe-area insets: inside the platform frame bare env() is 0px, the
+       bridge forwards the real value as --un-safe-inset-*. --chrome-h is the
+       measured height of the fixed disclaimer + nav bar below. -->
+  <main class="max-w-5xl mx-auto px-4 py-6 flex flex-col gap-6" style="padding-top: calc(1.5rem + var(--un-safe-inset-top, env(safe-area-inset-top, 0px))); padding-bottom: calc(1.5rem + var(--chrome-h, 7rem))">
     <header class="flex items-center gap-3 px-1">
       <img src="/logo.svg" alt="" class="w-9 h-9 shrink-0" width="36" height="36">
       <span class="text-lg font-semibold tracking-tight">Trading journal</span>
     </header>
 
+    <!-- Tab Jurnal: daftar, form, impor, ekspor -->
+    <div id="jurnal-view" class="flex flex-col gap-6">
+
     <!-- Daftar trade -->
     <section id="list-view" class="flex flex-col gap-4">
       <div class="flex items-center justify-between gap-3 px-1">
         <h1 class="text-xl font-bold">Jurnal trading</h1>
-        <div class="flex items-center gap-2">
-          <button type="button" id="import-btn" class="rounded-lg border border-zinc-700 px-4 py-2 text-sm text-zinc-100 hover:bg-zinc-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-400">Impor CSV</button>
-          <button type="button" id="new-trade-btn" class="rounded-lg bg-violet-600 hover:bg-violet-500 px-4 py-2 text-sm font-semibold text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-400">Catat trade</button>
+        <div class="flex flex-wrap items-center justify-end gap-2">
+          <button type="button" id="export-btn" class="hidden rounded-lg border border-line-2 px-4 py-2 text-sm text-ink hover:bg-surface-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent">Ekspor CSV</button>
+          <button type="button" id="import-btn" class="rounded-lg border border-line-2 px-4 py-2 text-sm text-ink hover:bg-surface-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent">Impor CSV</button>
+          <button type="button" id="new-trade-btn" class="rounded-lg bg-accent hover:bg-accent-hover px-4 py-2 text-sm font-semibold text-on-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent">Catat trade</button>
         </div>
       </div>
-      <p id="demo-note" class="hidden px-1 text-sm text-amber-300">Contoh data staging. Trade ini tidak tersimpan dan tidak bisa diubah.</p>
-      <p id="import-note" class="hidden px-1 text-sm text-emerald-300" role="status"></p>
-      <p class="px-1 text-xs text-zinc-500">Disiplin: ✅ jika risiko maksimal 1% modal dan RR rencana minimal 1:2. ❌ jika salah satunya dilanggar. Risiko bertanda * dihitung otomatis (perkiraan).</p>
+      <p id="demo-note" class="hidden px-1 text-sm text-warn">Contoh data staging. Trade ini tidak tersimpan dan tidak bisa diubah.</p>
+      <p id="import-note" class="hidden px-1 text-sm text-buy" role="status"></p>
+      <p class="px-1 text-xs text-muted-2">Disiplin: ✅ jika risiko maksimal 1% modal, RR rencana minimal 1:2 dan trade sesuai plan. ❌ jika salah satunya dilanggar. Risiko bertanda * dihitung otomatis (perkiraan).</p>
 
-      <section id="summary" class="hidden rounded-xl border border-zinc-800 p-4 flex flex-col gap-3" aria-labelledby="summary-title">
-        <h2 id="summary-title" class="text-sm font-semibold text-zinc-400">Ringkasan</h2>
-        <dl class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-x-4 gap-y-3">
-          <div><dt class="text-xs text-zinc-500">Total trade</dt><dd id="sum-total" class="font-mono text-lg">-</dd></div>
-          <div><dt class="text-xs text-zinc-500">Win rate</dt><dd id="sum-winrate" class="font-mono text-lg">-</dd><dd id="sum-winrate-sub" class="text-xs text-zinc-500"></dd></div>
-          <div><dt class="text-xs text-zinc-500">Total R</dt><dd id="sum-total-r" class="font-mono text-lg">-</dd></div>
-          <div><dt class="text-xs text-zinc-500">Rata-rata R</dt><dd id="sum-avg-r" class="font-mono text-lg">-</dd><dd id="sum-r-sub" class="text-xs text-zinc-500"></dd></div>
-          <div class="col-span-2 sm:col-span-1"><dt class="text-xs text-zinc-500">Max drawdown</dt><dd id="sum-dd" class="font-mono text-lg">-</dd><dd id="sum-dd-sub" class="text-xs text-zinc-500"></dd></div>
+      <section id="summary" class="hidden rounded-xl border border-line p-4 flex flex-col gap-4" aria-labelledby="summary-title">
+        <h2 id="summary-title" class="text-sm font-semibold text-muted">Ringkasan</h2>
+        <dl class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-3">
+          <div><dt class="text-xs text-muted-2">Total trade</dt><dd id="sum-total" class="font-mono text-lg">-</dd></div>
+          <div><dt class="text-xs text-muted-2">Win rate</dt><dd id="sum-winrate" class="font-mono text-lg">-</dd><dd id="sum-winrate-sub" class="text-xs text-muted-2"></dd></div>
+          <div><dt class="text-xs text-muted-2">Total profit/loss</dt><dd id="sum-pl" class="font-mono text-lg">-</dd></div>
+          <div><dt class="text-xs text-muted-2">Total R</dt><dd id="sum-total-r" class="font-mono text-lg">-</dd></div>
+          <div><dt class="text-xs text-muted-2">Rata-rata R</dt><dd id="sum-avg-r" class="font-mono text-lg">-</dd><dd id="sum-r-sub" class="text-xs text-muted-2"></dd></div>
+          <div><dt class="text-xs text-muted-2">Rata-rata RR rencana</dt><dd id="sum-avg-rr" class="font-mono text-lg">-</dd><dd id="sum-rr-sub" class="text-xs text-muted-2"></dd></div>
+          <div><dt class="text-xs text-muted-2">Max drawdown</dt><dd id="sum-dd" class="font-mono text-lg">-</dd><dd id="sum-dd-sub" class="text-xs text-muted-2"></dd></div>
         </dl>
-        <p id="sum-excluded" class="hidden text-xs text-zinc-500"></p>
+        <p id="sum-excluded" class="hidden text-xs text-muted-2"></p>
+
+        <div class="flex flex-col gap-2">
+          <h3 class="text-xs font-semibold text-muted">Grafik equity</h3>
+          <p id="equity-note" class="text-xs text-muted-2">Grafik equity muncul setelah 2 trade punya hasil.</p>
+          <div id="equity-chart" class="hidden"></div>
+          <dl id="equity-stats" class="hidden grid grid-cols-3 gap-3 text-sm">
+            <div><dt class="text-xs text-muted-2">Tertinggi</dt><dd id="eq-high" class="font-mono">-</dd></div>
+            <div><dt class="text-xs text-muted-2">Terendah</dt><dd id="eq-low" class="font-mono">-</dd></div>
+            <div><dt class="text-xs text-muted-2">Saat ini</dt><dd id="eq-cur" class="font-mono">-</dd></div>
+          </dl>
+        </div>
+
+        <div id="cat-section" class="hidden flex flex-col gap-2">
+          <h3 class="text-xs font-semibold text-muted">Performa per kategori</h3>
+          <div class="overflow-x-auto rounded-lg border border-line">
+            <table class="min-w-full text-sm">
+              <thead class="bg-surface text-left text-xs text-muted">
+                <tr>
+                  <th class="px-3 py-2 font-medium">Kategori</th>
+                  <th class="px-3 py-2 font-medium text-right">Trade</th>
+                  <th class="px-3 py-2 font-medium text-right">Win rate</th>
+                  <th class="px-3 py-2 font-medium text-right">Total P/L</th>
+                  <th class="px-3 py-2 font-medium text-right">Total R</th>
+                </tr>
+              </thead>
+              <tbody id="cat-tbody" class="divide-y divide-line"></tbody>
+            </table>
+          </div>
+        </div>
       </section>
 
-      <div id="list-loading" class="px-1 py-10 text-center text-sm text-zinc-400">Memuat trade...</div>
+      <!-- Kalkulator lot & risiko: hitung di tempat, tidak menyimpan apa pun -->
+      <details id="calc-tool" class="hidden rounded-xl border border-line">
+        <summary class="cursor-pointer select-none rounded-xl px-4 py-3 text-sm font-semibold text-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-accent">Kalkulator lot &amp; risiko</summary>
+        <div class="flex flex-col gap-3 border-t border-line p-4">
+          <div class="grid grid-cols-2 gap-3">
+            <label class="flex flex-col gap-1 text-sm"><span class="text-ink-2">Modal ($)</span>
+              <input id="calc-capital" type="text" inputmode="decimal" placeholder="100" class="field"></label>
+            <label class="flex flex-col gap-1 text-sm"><span class="text-ink-2">Risiko (%)</span>
+              <input id="calc-risk-pct" type="text" inputmode="decimal" value="1" class="field"></label>
+            <label class="flex flex-col gap-1 text-sm"><span class="text-ink-2">Jarak SL (pip/poin)</span>
+              <input id="calc-sl-dist" type="text" inputmode="decimal" placeholder="20" class="field"></label>
+            <label class="flex flex-col gap-1 text-sm"><span class="text-ink-2">Nilai per pip untuk 1 lot ($)</span>
+              <input id="calc-pip-value" type="text" inputmode="decimal" value="10" class="field"></label>
+          </div>
+          <dl class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+            <div><dt class="text-muted-2">Risiko ($)</dt><dd id="lc-risk" class="font-mono">-</dd></div>
+            <div><dt class="text-muted-2">Ukuran lot</dt><dd id="lc-lot" class="font-mono">-</dd></div>
+            <div><dt class="text-muted-2">Jarak TP untuk RR 1:2</dt><dd id="lc-tp" class="font-mono">-</dd></div>
+            <div><dt class="text-muted-2">Potensi profit RR 1:2</dt><dd id="lc-profit" class="font-mono">-</dd></div>
+          </dl>
+          <p id="lc-warn" class="hidden text-sm text-sell" role="alert">Risiko melebihi 1% modal.</p>
+          <p class="text-xs text-muted-2">Nilai per pip berbeda tiap instrumen dan broker. Cek spesifikasi kontrak di brokermu. Lot dibulatkan ke bawah ke 0,01. Kalkulator tidak menyimpan apa pun.</p>
+        </div>
+      </details>
 
-      <div id="list-error" class="hidden rounded-xl border border-red-500/40 bg-red-500/10 p-4 text-sm">
-        <p class="text-red-300">Gagal memuat trade. Periksa koneksi lalu coba lagi.</p>
-        <button type="button" id="retry-btn" class="mt-3 rounded-lg border border-zinc-700 px-3 py-1.5 text-zinc-100 hover:bg-zinc-800">Coba lagi</button>
+      <div id="list-loading" class="px-1 py-10 text-center text-sm text-muted">Memuat trade...</div>
+
+      <div id="list-error" class="hidden rounded-xl border border-sell/40 bg-sell/10 p-4 text-sm">
+        <p class="text-sell">Gagal memuat trade. Periksa koneksi lalu coba lagi.</p>
+        <button type="button" id="retry-btn" class="mt-3 rounded-lg border border-line-2 px-3 py-1.5 text-ink hover:bg-surface-2">Coba lagi</button>
       </div>
 
-      <div id="list-empty" class="hidden flex flex-col items-center gap-3 rounded-xl border border-zinc-800 p-8 text-center">
+      <div id="list-empty" class="hidden flex flex-col items-center gap-3 rounded-xl border border-line p-8 text-center">
         <p class="font-semibold">Belum ada trade</p>
-        <p class="text-sm text-zinc-400">Catat trade pertamamu untuk melihat risiko, RR dan cek disiplin otomatis.</p>
-        <button type="button" id="empty-new-btn" class="rounded-lg bg-violet-600 hover:bg-violet-500 px-4 py-2 text-sm font-semibold text-white">Catat trade pertama</button>
-        <button type="button" id="empty-import-btn" class="rounded-lg border border-zinc-700 px-4 py-2 text-sm text-zinc-100 hover:bg-zinc-800">Impor dari CSV</button>
+        <p class="text-sm text-muted">Catat trade pertamamu untuk melihat risiko, RR dan cek disiplin otomatis.</p>
+        <button type="button" id="empty-new-btn" class="rounded-lg bg-accent hover:bg-accent-hover px-4 py-2 text-sm font-semibold text-on-accent">Catat trade pertama</button>
+        <button type="button" id="empty-import-btn" class="rounded-lg border border-line-2 px-4 py-2 text-sm text-ink hover:bg-surface-2">Impor dari CSV</button>
       </div>
 
       <!-- Ponsel: daftar -->
-      <ul id="trade-list" class="hidden md:hidden divide-y divide-zinc-800 rounded-xl border border-zinc-800"></ul>
+      <ul id="trade-list" class="hidden md:hidden divide-y divide-line rounded-xl border border-line"></ul>
 
       <!-- Desktop: tabel -->
-      <div id="trade-table-wrap" class="hidden overflow-x-auto rounded-xl border border-zinc-800">
+      <div id="trade-table-wrap" class="hidden overflow-x-auto rounded-xl border border-line">
         <table class="min-w-full text-sm">
-          <thead class="bg-zinc-900 text-left text-xs text-zinc-400">
+          <thead class="bg-surface text-left text-xs text-muted">
             <tr>
               <th class="px-3 py-2 font-medium">Tanggal</th>
               <th class="px-3 py-2 font-medium">Instrumen</th>
@@ -160,7 +243,7 @@
               <th class="px-3 py-2 font-medium text-center">Disiplin</th>
             </tr>
           </thead>
-          <tbody id="trade-tbody" class="divide-y divide-zinc-800"></tbody>
+          <tbody id="trade-tbody" class="divide-y divide-line"></tbody>
         </table>
       </div>
     </section>
@@ -168,25 +251,25 @@
     <!-- Form trade -->
     <section id="form-view" class="hidden w-full max-w-2xl mx-auto flex flex-col gap-4">
       <div class="flex items-center gap-3 px-1">
-        <button type="button" id="back-btn" class="rounded-lg px-2 py-1 text-sm text-violet-300 hover:bg-zinc-800">&larr; Kembali</button>
+        <button type="button" id="back-btn" class="rounded-lg px-2 py-1 text-sm text-accent hover:bg-surface-2">&larr; Kembali</button>
         <h1 id="form-title" class="text-xl font-bold">Catat trade</h1>
       </div>
 
       <form id="trade-form" class="flex flex-col gap-6" novalidate>
         <fieldset class="flex flex-col gap-3">
-          <legend class="mb-2 text-sm font-semibold text-zinc-400">Waktu dan instrumen</legend>
+          <legend class="mb-2 text-sm font-semibold text-muted">Waktu dan instrumen</legend>
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <label class="flex flex-col gap-1 text-sm"><span class="text-zinc-300">Tanggal</span>
+            <label class="flex flex-col gap-1 text-sm"><span class="text-ink-2">Tanggal</span>
               <input name="trade_date" type="date" required class="field"></label>
-            <label class="flex flex-col gap-1 text-sm"><span class="text-zinc-300">Jam entry</span>
+            <label class="flex flex-col gap-1 text-sm"><span class="text-ink-2">Jam entry</span>
               <input name="entry_time" type="time" class="field"></label>
-            <label class="flex flex-col gap-1 text-sm"><span class="text-zinc-300">Jam exit</span>
+            <label class="flex flex-col gap-1 text-sm"><span class="text-ink-2">Jam exit</span>
               <input name="exit_time" type="time" class="field"></label>
           </div>
           <div class="grid grid-cols-2 gap-3">
-            <label class="flex flex-col gap-1 text-sm"><span class="text-zinc-300">Instrumen</span>
+            <label class="flex flex-col gap-1 text-sm"><span class="text-ink-2">Instrumen</span>
               <input name="instrument" type="text" required maxlength="40" autocapitalize="characters" placeholder="EURUSD, BBCA, BTC" class="field"></label>
-            <label class="flex flex-col gap-1 text-sm"><span class="text-zinc-300">Kategori</span>
+            <label class="flex flex-col gap-1 text-sm"><span class="text-ink-2">Kategori</span>
               <select name="category" class="field">
                 <option value="">Pilih</option>
                 <option value="forex">Forex</option>
@@ -195,51 +278,51 @@
               </select></label>
           </div>
           <div class="flex flex-col gap-1 text-sm">
-            <span class="text-zinc-300">Posisi</span>
+            <span class="text-ink-2">Posisi</span>
             <div class="grid grid-cols-2 gap-2">
-              <label class="choice"><input type="radio" name="position" value="buy" class="accent-violet-500"> Buy</label>
-              <label class="choice"><input type="radio" name="position" value="sell" class="accent-violet-500"> Sell</label>
+              <label class="choice"><input type="radio" name="position" value="buy"> Buy</label>
+              <label class="choice"><input type="radio" name="position" value="sell"> Sell</label>
             </div>
           </div>
         </fieldset>
 
         <fieldset class="flex flex-col gap-3">
-          <legend class="mb-2 text-sm font-semibold text-zinc-400">Harga dan ukuran</legend>
+          <legend class="mb-2 text-sm font-semibold text-muted">Harga dan ukuran</legend>
           <div class="grid grid-cols-2 gap-3">
-            <label class="flex flex-col gap-1 text-sm"><span class="text-zinc-300">Entry</span>
+            <label class="flex flex-col gap-1 text-sm"><span class="text-ink-2">Entry</span>
               <input name="entry_price" type="text" inputmode="decimal" class="field num"></label>
-            <label class="flex flex-col gap-1 text-sm"><span class="text-zinc-300">Exit</span>
+            <label class="flex flex-col gap-1 text-sm"><span class="text-ink-2">Exit</span>
               <input name="exit_price" type="text" inputmode="decimal" class="field num"></label>
-            <label class="flex flex-col gap-1 text-sm"><span class="text-zinc-300">Stop loss (SL)</span>
+            <label class="flex flex-col gap-1 text-sm"><span class="text-ink-2">Stop loss (SL)</span>
               <input name="stop_loss" type="text" inputmode="decimal" class="field num"></label>
-            <label class="flex flex-col gap-1 text-sm"><span class="text-zinc-300">Take profit (TP)</span>
+            <label class="flex flex-col gap-1 text-sm"><span class="text-ink-2">Take profit (TP)</span>
               <input name="take_profit" type="text" inputmode="decimal" class="field num"></label>
-            <label class="flex flex-col gap-1 text-sm"><span class="text-zinc-300">Lot / ukuran posisi</span>
+            <label class="flex flex-col gap-1 text-sm"><span class="text-ink-2">Lot / ukuran posisi</span>
               <input name="lot_size" type="text" inputmode="decimal" class="field num"></label>
-            <label class="flex flex-col gap-1 text-sm"><span class="text-zinc-300">Modal saat ini ($)</span>
+            <label class="flex flex-col gap-1 text-sm"><span class="text-ink-2">Modal saat ini ($)</span>
               <input name="capital" type="text" inputmode="decimal" class="field num"></label>
           </div>
-          <label class="flex flex-col gap-1 text-sm"><span class="text-zinc-300">Risiko ($)</span>
+          <label class="flex flex-col gap-1 text-sm"><span class="text-ink-2">Risiko ($)</span>
             <input name="risk_amount" type="text" inputmode="decimal" placeholder="Kosongkan untuk dihitung otomatis" class="field num">
-            <span class="text-xs text-zinc-500">Otomatis: |Entry - SL| x lot x ukuran kontrak (forex 100.000, saham 100 lembar, kripto 1). Hanya perkiraan; isi sendiri jika berbeda.</span></label>
+            <span class="text-xs text-muted-2">Otomatis: |Entry - SL| x lot x ukuran kontrak (forex 100.000, saham 100 lembar, kripto 1). Hanya perkiraan; isi sendiri jika berbeda.</span></label>
         </fieldset>
 
         <fieldset class="flex flex-col gap-3">
-          <legend class="mb-2 text-sm font-semibold text-zinc-400">Analisis</legend>
+          <legend class="mb-2 text-sm font-semibold text-muted">Analisis</legend>
           <div class="grid grid-cols-2 gap-3">
-            <label class="flex flex-col gap-1 text-sm"><span class="text-zinc-300">Setup</span>
+            <label class="flex flex-col gap-1 text-sm"><span class="text-ink-2">Setup</span>
               <input name="setup" type="text" maxlength="200" placeholder="Breakout, pullback" class="field"></label>
-            <label class="flex flex-col gap-1 text-sm"><span class="text-zinc-300">Timeframe</span>
+            <label class="flex flex-col gap-1 text-sm"><span class="text-ink-2">Timeframe</span>
               <input name="timeframe" type="text" maxlength="20" placeholder="M15, H1, D1" class="field"></label>
           </div>
-          <label class="flex flex-col gap-1 text-sm"><span class="text-zinc-300">Alasan entry</span>
+          <label class="flex flex-col gap-1 text-sm"><span class="text-ink-2">Alasan entry</span>
             <textarea name="entry_reason" rows="3" maxlength="2000" class="field"></textarea></label>
         </fieldset>
 
         <fieldset class="flex flex-col gap-3">
-          <legend class="mb-2 text-sm font-semibold text-zinc-400">Psikologi dan evaluasi</legend>
+          <legend class="mb-2 text-sm font-semibold text-muted">Psikologi dan evaluasi</legend>
           <div class="grid grid-cols-2 gap-3">
-            <label class="flex flex-col gap-1 text-sm"><span class="text-zinc-300">Emosi</span>
+            <label class="flex flex-col gap-1 text-sm"><span class="text-ink-2">Emosi</span>
               <select name="emotion" class="field">
                 <option value="">Pilih</option>
                 <option value="tenang">Tenang</option>
@@ -250,7 +333,7 @@
                 <option value="ragu">Ragu</option>
                 <option value="bosan">Bosan</option>
               </select></label>
-            <label class="flex flex-col gap-1 text-sm"><span class="text-zinc-300">Sesuai plan?</span>
+            <label class="flex flex-col gap-1 text-sm"><span class="text-ink-2">Sesuai plan?</span>
               <select name="followed_plan" class="field">
                 <option value="">Pilih</option>
                 <option value="true">Ya</option>
@@ -258,46 +341,46 @@
               </select></label>
           </div>
           <div class="flex flex-col gap-1 text-sm">
-            <span class="text-zinc-300">Kesalahan</span>
+            <span class="text-ink-2">Kesalahan</span>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <label class="choice"><input type="checkbox" name="mistakes" value="entry_terlalu_cepat" class="accent-violet-500"> Entry terlalu cepat</label>
-              <label class="choice"><input type="checkbox" name="mistakes" value="sl_digeser" class="accent-violet-500"> SL digeser</label>
-              <label class="choice"><input type="checkbox" name="mistakes" value="tp_dipotong" class="accent-violet-500"> TP dipotong</label>
-              <label class="choice"><input type="checkbox" name="mistakes" value="overtrade" class="accent-violet-500"> Overtrade</label>
-              <label class="choice"><input type="checkbox" name="mistakes" value="melanggar_risiko" class="accent-violet-500"> Melanggar risiko</label>
-              <label class="choice"><input type="checkbox" name="mistakes" value="tanpa_setup" class="accent-violet-500"> Tanpa setup</label>
+              <label class="choice"><input type="checkbox" name="mistakes" value="entry_terlalu_cepat"> Entry terlalu cepat</label>
+              <label class="choice"><input type="checkbox" name="mistakes" value="sl_digeser"> SL digeser</label>
+              <label class="choice"><input type="checkbox" name="mistakes" value="tp_dipotong"> TP dipotong</label>
+              <label class="choice"><input type="checkbox" name="mistakes" value="overtrade"> Overtrade</label>
+              <label class="choice"><input type="checkbox" name="mistakes" value="melanggar_risiko"> Melanggar risiko</label>
+              <label class="choice"><input type="checkbox" name="mistakes" value="tanpa_setup"> Tanpa setup</label>
             </div>
           </div>
-          <label class="flex flex-col gap-1 text-sm"><span class="text-zinc-300">Pelajaran</span>
+          <label class="flex flex-col gap-1 text-sm"><span class="text-ink-2">Pelajaran</span>
             <textarea name="lesson" rows="3" maxlength="2000" class="field"></textarea></label>
         </fieldset>
 
         <fieldset class="flex flex-col gap-3">
-          <legend class="mb-2 text-sm font-semibold text-zinc-400">Hasil</legend>
-          <label class="flex flex-col gap-1 text-sm"><span class="text-zinc-300">Hasil ($)</span>
+          <legend class="mb-2 text-sm font-semibold text-muted">Hasil</legend>
+          <label class="flex flex-col gap-1 text-sm"><span class="text-ink-2">Hasil ($)</span>
             <input name="result_amount" type="text" inputmode="decimal" placeholder="Rugi pakai minus, contoh -25" class="field num"></label>
         </fieldset>
 
-        <div id="calc-box" class="rounded-xl border border-zinc-800 p-4 flex flex-col gap-3">
+        <div id="calc-box" class="rounded-xl border border-line p-4 flex flex-col gap-3">
           <div class="flex items-center justify-between gap-2">
-            <h2 class="text-sm font-semibold text-zinc-400">Hitungan otomatis</h2>
+            <h2 class="text-sm font-semibold text-muted">Hitungan otomatis</h2>
             <span id="calc-badge"></span>
           </div>
           <dl class="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
-            <div><dt class="text-zinc-500">Risiko</dt><dd id="calc-risk" class="font-mono">-</dd></div>
-            <div><dt class="text-zinc-500">Risiko % modal</dt><dd id="calc-risk-pct" class="font-mono">-</dd></div>
-            <div><dt class="text-zinc-500">Hasil dalam R</dt><dd id="calc-r" class="font-mono">-</dd></div>
-            <div><dt class="text-zinc-500">RR rencana</dt><dd id="calc-planned-rr" class="font-mono">-</dd></div>
-            <div><dt class="text-zinc-500">RR aktual</dt><dd id="calc-actual-rr" class="font-mono">-</dd></div>
+            <div><dt class="text-muted-2">Risiko</dt><dd id="calc-risk" class="font-mono">-</dd></div>
+            <div><dt class="text-muted-2">Risiko % modal</dt><dd id="calc-risk-pct" class="font-mono">-</dd></div>
+            <div><dt class="text-muted-2">Hasil dalam R</dt><dd id="calc-r" class="font-mono">-</dd></div>
+            <div><dt class="text-muted-2">RR rencana</dt><dd id="calc-planned-rr" class="font-mono">-</dd></div>
+            <div><dt class="text-muted-2">RR aktual</dt><dd id="calc-actual-rr" class="font-mono">-</dd></div>
           </dl>
-          <p id="calc-violations" class="text-sm text-red-300"></p>
+          <p id="calc-violations" class="text-sm text-sell"></p>
         </div>
 
-        <p id="form-error" class="hidden text-sm text-red-300" role="alert"></p>
+        <p id="form-error" class="hidden text-sm text-sell" role="alert"></p>
 
         <div class="flex flex-col-reverse sm:flex-row sm:justify-between gap-3">
-          <button type="button" id="delete-btn" class="hidden rounded-lg border border-red-500/50 px-4 py-2 text-sm text-red-300 hover:bg-red-500/10">Hapus trade</button>
-          <button type="submit" id="save-btn" class="sm:ml-auto rounded-lg bg-violet-600 hover:bg-violet-500 px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-400">Simpan trade</button>
+          <button type="button" id="delete-btn" class="hidden rounded-lg border border-sell/50 px-4 py-2 text-sm text-sell hover:bg-sell/10">Hapus trade</button>
+          <button type="submit" id="save-btn" class="sm:ml-auto rounded-lg bg-accent hover:bg-accent-hover px-5 py-2.5 text-sm font-semibold text-on-accent disabled:opacity-60 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent">Simpan trade</button>
         </div>
       </form>
     </section>
@@ -305,53 +388,53 @@
     <!-- Impor CSV -->
     <section id="import-view" class="hidden w-full max-w-2xl mx-auto flex flex-col gap-6">
       <div class="flex items-center gap-3 px-1">
-        <button type="button" id="import-back-btn" class="rounded-lg px-2 py-1 text-sm text-violet-300 hover:bg-zinc-800">&larr; Kembali</button>
+        <button type="button" id="import-back-btn" class="rounded-lg px-2 py-1 text-sm text-accent hover:bg-surface-2">&larr; Kembali</button>
         <h1 class="text-xl font-bold">Impor trade dari CSV</h1>
       </div>
 
       <div class="flex flex-col gap-3">
-        <h2 class="text-sm font-semibold text-zinc-400">1. Pilih file</h2>
-        <label id="drop-zone" class="flex flex-col items-center gap-2 rounded-xl border-2 border-dashed border-zinc-700 p-6 text-center text-sm cursor-pointer hover:bg-zinc-900">
+        <h2 class="text-sm font-semibold text-muted">1. Pilih file</h2>
+        <label id="drop-zone" class="flex flex-col items-center gap-2 rounded-xl border-2 border-dashed border-line-2 p-6 text-center text-sm cursor-pointer hover:bg-surface">
           <input id="csv-input" type="file" accept=".csv,text/csv,text/plain" class="sr-only">
-          <span class="rounded-lg bg-zinc-800 px-4 py-2 font-semibold text-zinc-100">Pilih file CSV</span>
-          <span class="text-zinc-400">atau tarik file ke sini. Maksimal 2 MB dan 1000 baris.</span>
-          <span id="file-name" class="hidden font-mono text-zinc-300"></span>
+          <span class="rounded-lg bg-surface-2 px-4 py-2 font-semibold text-ink">Pilih file CSV</span>
+          <span class="text-muted">atau tarik file ke sini. Maksimal 2 MB dan 1000 baris.</span>
+          <span id="file-name" class="hidden font-mono text-ink-2"></span>
         </label>
-        <a href="/contoh-impor.csv" download="contoh-impor.csv" id="sample-link" class="self-start px-1 text-sm text-violet-300 hover:underline">Unduh contoh CSV</a>
-        <p id="file-error" class="hidden text-sm text-red-300" role="alert"></p>
+        <a href="/contoh-impor.csv" download="contoh-impor.csv" id="sample-link" class="self-start px-1 text-sm text-accent hover:underline">Unduh contoh CSV</a>
+        <p id="file-error" class="hidden text-sm text-sell" role="alert"></p>
       </div>
 
       <div id="map-section" class="hidden flex flex-col gap-3">
-        <h2 class="text-sm font-semibold text-zinc-400">2. Cocokkan kolom</h2>
-        <p class="text-xs text-zinc-500">Kolom dicocokkan otomatis dari judulnya. Periksa dan ubah jika ada yang salah. Tanggal dan Instrumen wajib.</p>
+        <h2 class="text-sm font-semibold text-muted">2. Cocokkan kolom</h2>
+        <p class="text-xs text-muted-2">Kolom dicocokkan otomatis dari judulnya. Periksa dan ubah jika ada yang salah. Tanggal dan Instrumen wajib.</p>
         <div id="map-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <label class="flex flex-col gap-1 text-sm"><span class="text-zinc-300">Format tanggal</span>
+          <label class="flex flex-col gap-1 text-sm"><span class="text-ink-2">Format tanggal</span>
             <select id="opt-date" class="field">
               <option value="auto">Otomatis</option>
               <option value="dmy">HH/BB/TTTT</option>
               <option value="mdy">BB/HH/TTTT</option>
               <option value="ymd">TTTT-BB-HH</option>
             </select></label>
-          <label class="flex flex-col gap-1 text-sm"><span class="text-zinc-300">Pemisah desimal</span>
+          <label class="flex flex-col gap-1 text-sm"><span class="text-ink-2">Pemisah desimal</span>
             <select id="opt-decimal" class="field">
               <option value="auto">Otomatis</option>
               <option value="dot">Titik</option>
               <option value="comma">Koma</option>
             </select></label>
-          <label class="flex flex-col gap-1 text-sm"><span class="text-zinc-300">Judul kolom ada di baris</span>
+          <label class="flex flex-col gap-1 text-sm"><span class="text-ink-2">Judul kolom ada di baris</span>
             <select id="opt-header" class="field"></select></label>
         </div>
       </div>
 
       <div id="preview-section" class="hidden flex flex-col gap-3">
-        <h2 class="text-sm font-semibold text-zinc-400">3. Pratinjau</h2>
-        <p id="preview-counts" class="text-sm text-zinc-300"></p>
-        <p id="preview-hint" class="hidden text-sm text-amber-300">Pilih kolom Tanggal dan Instrumen.</p>
-        <ul id="preview-list" class="md:hidden divide-y divide-zinc-800 rounded-xl border border-zinc-800"></ul>
-        <div class="max-md:hidden overflow-x-auto rounded-xl border border-zinc-800">
+        <h2 class="text-sm font-semibold text-muted">3. Pratinjau</h2>
+        <p id="preview-counts" class="text-sm text-ink-2"></p>
+        <p id="preview-hint" class="hidden text-sm text-warn">Pilih kolom Tanggal dan Instrumen.</p>
+        <ul id="preview-list" class="md:hidden divide-y divide-line rounded-xl border border-line"></ul>
+        <div class="max-md:hidden overflow-x-auto rounded-xl border border-line">
           <table class="min-w-full text-sm">
-            <thead class="bg-zinc-900 text-left text-xs text-zinc-400">
+            <thead class="bg-surface text-left text-xs text-muted">
               <tr>
                 <th class="px-3 py-2 font-medium">Baris</th>
                 <th class="px-3 py-2 font-medium">Status</th>
@@ -365,23 +448,203 @@
                 <th class="px-3 py-2 font-medium text-center">Disiplin</th>
               </tr>
             </thead>
-            <tbody id="preview-tbody" class="divide-y divide-zinc-800"></tbody>
+            <tbody id="preview-tbody" class="divide-y divide-line"></tbody>
           </table>
         </div>
-        <p id="preview-more" class="hidden text-xs text-zinc-500"></p>
-        <p id="import-error" class="hidden text-sm text-red-300" role="alert"></p>
+        <p id="preview-more" class="hidden text-xs text-muted-2"></p>
+        <p id="import-error" class="hidden text-sm text-sell" role="alert"></p>
         <div class="flex sm:justify-end">
-          <button type="button" id="do-import-btn" disabled class="w-full sm:w-auto rounded-lg bg-violet-600 hover:bg-violet-500 px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-400">Impor 0 trade</button>
+          <button type="button" id="do-import-btn" disabled class="w-full sm:w-auto rounded-lg bg-accent hover:bg-accent-hover px-5 py-2.5 text-sm font-semibold text-on-accent disabled:opacity-60 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent">Impor 0 trade</button>
         </div>
       </div>
     </section>
+
+    <!-- Ekspor CSV -->
+    <section id="export-view" class="hidden w-full max-w-2xl mx-auto flex flex-col gap-4">
+      <div class="flex items-center gap-3 px-1">
+        <button type="button" id="export-back-btn" class="rounded-lg px-2 py-1 text-sm text-accent hover:bg-surface-2">&larr; Kembali</button>
+        <h1 class="text-xl font-bold">Ekspor jurnal ke CSV</h1>
+      </div>
+      <p class="px-1 text-sm text-muted">Salin teks di bawah lalu tempel ke Excel, Google Sheets atau file .csv. Judul kolom cocok dengan Impor CSV, jadi file ini bisa diimpor kembali.</p>
+      <textarea id="export-csv" readonly rows="12" wrap="off" spellcheck="false" aria-label="Isi jurnal dalam format CSV" class="field font-mono text-xs"></textarea>
+      <p id="export-error" class="hidden text-sm text-sell" role="alert"></p>
+      <div class="flex sm:justify-end">
+        <button type="button" id="copy-csv-btn" class="w-full sm:w-auto rounded-lg bg-accent hover:bg-accent-hover px-5 py-2.5 text-sm font-semibold text-on-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent">Salin CSV</button>
+      </div>
+    </section>
+    </div>
+
+    <!-- Tab Broker -->
+    <section id="broker-view" class="hidden flex flex-col gap-4">
+      <div class="px-1">
+        <h1 class="text-xl font-bold">Pilih broker</h1>
+        <p class="text-sm text-muted">Bandingkan lalu pilih broker yang kamu pakai. Data di bawah perlu kamu cek sendiri di situs resmi masing-masing broker.</p>
+      </div>
+      <div id="broker-list" class="grid grid-cols-1 md:grid-cols-3 gap-3"></div>
+    </section>
+
+    <!-- Tab Sinyal -->
+    <section id="signals-view" class="hidden flex flex-col gap-4">
+      <div class="px-1">
+        <h1 class="text-xl font-bold">Sinyal teknikal VIP</h1>
+        <p class="text-sm text-muted">Contoh sinyal untuk demonstrasi. Bukan nasihat keuangan.</p>
+      </div>
+      <div id="signals-filters" class="hidden grid grid-cols-2 gap-3">
+        <label class="flex flex-col gap-1 text-sm"><span class="text-ink-2">Pair</span>
+          <select id="signal-pair" class="field"></select></label>
+        <label class="flex flex-col gap-1 text-sm"><span class="text-ink-2">Status</span>
+          <select id="signal-status" class="field">
+            <option value="all">Semua</option>
+            <option value="aktif">Aktif</option>
+            <option value="tp">TP</option>
+            <option value="sl">SL</option>
+          </select></label>
+      </div>
+      <div class="relative">
+        <div id="signals-list" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+        <div id="signals-lock" class="absolute inset-0 flex flex-col items-center justify-start gap-3 rounded-xl bg-canvas/60 px-6 pt-16 text-center">
+          <p class="text-lg font-bold">Khusus anggota VIP</p>
+          <p class="text-sm text-muted">Daftar VIP untuk membuka kartu sinyal.</p>
+          <a href="#/vip" id="signals-cta" class="rounded-lg bg-accent hover:bg-accent-hover px-5 py-2.5 text-sm font-semibold text-on-accent no-underline focus:outline-none focus-visible:ring-2 focus-visible:ring-accent">Daftar VIP</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab VIP -->
+    <section id="vip-view" class="hidden w-full max-w-2xl mx-auto flex flex-col gap-6">
+      <h1 class="px-1 text-xl font-bold">VIP Sinyal</h1>
+      <section class="rounded-xl border border-line p-4 flex items-center justify-between gap-3" aria-labelledby="vip-status-title">
+        <div>
+          <h2 id="vip-status-title" class="text-sm font-semibold text-muted">Status akun</h2>
+          <p id="vip-status-value" class="text-lg font-bold">Gratis</p>
+          <p id="vip-status-sub" class="text-xs text-muted-2"></p>
+        </div>
+        <button type="button" id="vip-downgrade-btn" class="hidden rounded-lg border border-line-2 px-3 py-2 text-sm text-ink hover:bg-surface-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent">Kembali ke Gratis</button>
+      </section>
+      <p id="vip-success" class="hidden rounded-xl border border-buy/40 bg-buy/10 p-4 text-sm text-buy" role="status">Status VIP aktif. <a href="#/sinyal" class="font-semibold underline">Buka tab Sinyal.</a></p>
+
+      <div id="vip-signup" class="flex flex-col gap-6">
+        <form id="vip-form" novalidate class="flex flex-col gap-4">
+          <div>
+            <h2 class="text-sm font-semibold text-muted">Daftar VIP Sinyal</h2>
+            <p class="text-xs text-muted-2">Harga dikonfirmasi admin lewat WhatsApp.</p>
+          </div>
+          <p id="vip-error" class="hidden text-sm text-sell" role="alert"></p>
+          <label class="flex flex-col gap-1 text-sm"><span class="text-ink-2">Nama lengkap</span>
+            <input name="name" type="text" maxlength="100" autocomplete="name" class="field">
+            <span class="field-error hidden text-xs text-sell" data-for="name" aria-live="polite"></span></label>
+          <label class="flex flex-col gap-1 text-sm"><span class="text-ink-2">Email</span>
+            <input name="email" type="email" maxlength="120" autocomplete="email" inputmode="email" class="field">
+            <span class="field-error hidden text-xs text-sell" data-for="email" aria-live="polite"></span></label>
+          <label class="flex flex-col gap-1 text-sm"><span class="text-ink-2">Nomor WhatsApp</span>
+            <input name="whatsapp" type="tel" maxlength="20" autocomplete="tel" inputmode="tel" placeholder="0812xxxxxxx atau +62812xxxxxxx" class="field">
+            <span class="field-error hidden text-xs text-sell" data-for="whatsapp" aria-live="polite"></span></label>
+          <label class="flex flex-col gap-1 text-sm"><span class="text-ink-2">Broker yang dipakai</span>
+            <select name="broker" class="field"></select>
+            <span class="field-error hidden text-xs text-sell" data-for="broker" aria-live="polite"></span></label>
+          <div class="flex flex-col gap-1 text-sm">
+            <span class="text-ink-2">Paket</span>
+            <div id="vip-plans" class="grid grid-cols-3 gap-2"></div>
+            <span class="field-error hidden text-xs text-sell" data-for="plan" aria-live="polite"></span>
+          </div>
+          <div class="flex flex-col gap-1 text-sm">
+            <label class="choice"><input type="checkbox" name="agree"> Saya memahami risiko trading dan menyetujui disclaimer.</label>
+            <span class="field-error hidden text-xs text-sell" data-for="agree" aria-live="polite"></span>
+          </div>
+          <div class="flex sm:justify-end">
+            <button type="submit" class="w-full sm:w-auto rounded-lg bg-accent hover:bg-accent-hover px-5 py-2.5 text-sm font-semibold text-on-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent">Lanjut ke pembayaran</button>
+          </div>
+        </form>
+        <div id="contact-card-form"></div>
+      </div>
+
+      <div id="vip-payment" class="hidden flex flex-col gap-4">
+        <div class="flex items-center gap-3 px-1">
+          <button type="button" id="payment-back-btn" class="rounded-lg px-2 py-1 text-sm text-accent hover:bg-surface-2">&larr; Ubah data</button>
+          <h2 class="text-xl font-bold">Instruksi pembayaran</h2>
+        </div>
+        <div class="rounded-xl border border-line p-4 flex flex-col gap-3">
+          <p class="text-sm text-warn">Placeholder: belum terhubung ke payment gateway.</p>
+          <dl id="payment-summary" class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-sm"></dl>
+          <p class="text-sm text-muted">Instruksi transfer akan dikirim admin lewat WhatsApp/email.</p>
+          <button type="button" id="simulate-pay-btn" class="rounded-lg bg-accent hover:bg-accent-hover px-5 py-2.5 text-sm font-semibold text-on-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent">Simulasikan pembayaran berhasil</button>
+          <p class="text-xs text-muted-2">Simulasi: status VIP hilang saat halaman dimuat ulang.</p>
+        </div>
+        <div id="contact-card-payment"></div>
+      </div>
+    </section>
   </main>
+
+  <!-- Disclaimer tetap + navigasi bawah, di semua halaman -->
+  <div id="bottom-chrome" class="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-surface/95 backdrop-blur" style="padding-bottom: var(--un-safe-inset-bottom, env(safe-area-inset-bottom, 0px))">
+    <footer class="px-4 py-1.5 text-center text-[11px] leading-snug text-muted-2">Trading berisiko tinggi dan dapat menyebabkan kehilangan modal. Sinyal bukan nasihat keuangan dan tidak ada jaminan profit. Gunakan hanya dana yang siap hilang.</footer>
+    <nav class="mx-auto grid max-w-5xl grid-cols-4" aria-label="Menu utama">
+      <a href="#/jurnal" id="tab-jurnal" class="tab-btn" aria-current="page">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h4"/></svg>
+        Jurnal</a>
+      <a href="#/broker" id="tab-broker" class="tab-btn">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10l9-6 9 6"/><path d="M5 10v9M10 10v9M14 10v9M19 10v9"/><path d="M3 19h18"/></svg>
+        Broker</a>
+      <a href="#/sinyal" id="tab-sinyal" class="tab-btn">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19V13M9 19V9M14 19V5M19 19v-3"/></svg>
+        Sinyal</a>
+      <a href="#/vip" id="tab-vip" class="tab-btn">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg>
+        VIP</a>
+    </nav>
+  </div>
 
   <script>
     const params = new URLSearchParams(window.location.search);
     const token = params.get('token') || '';
     const DEMO = params.get('demo') === '1';
     const headers = token ? { 'x-usernode-token': token } : {};
+
+    // ---- Konstanta TradeJournal Pro -------------------------------------------
+    // Data broker, kontak admin, paket VIP dan contoh sinyal. Ubah di sini saja.
+    // Tidak ada klaim "terbaik" atau "pasti": data broker ditulis apa adanya.
+    const BROKERS = [
+      { id: 'exness', name: 'Exness', regulation: 'Cek di situs resmi', minDeposit: 'Cek di situs resmi',
+        accountTypes: 'Cent, Standard (cek di situs resmi)', spread: 'Cek di situs resmi', platforms: 'MT4, MT5',
+        smallAccount: 'Ya', url: 'https://one.exnessonelink.com/a/agxv83hhzy?source=app', affiliate: true, placeholder: false },
+      { id: 'contoh-a', name: 'Broker Contoh A', regulation: 'Contoh: regulator X', minDeposit: 'Contoh: $10',
+        accountTypes: 'Micro, Standard', spread: 'Contoh: 1,2 pip EURUSD', platforms: 'MT4', smallAccount: 'Ya',
+        url: 'https://example.com/broker-a', affiliate: false, placeholder: true },
+      { id: 'contoh-b', name: 'Broker Contoh B', regulation: 'Contoh: regulator Y', minDeposit: 'Contoh: $100',
+        accountTypes: 'Standard', spread: 'Contoh: 0,8 pip EURUSD', platforms: 'MT5', smallAccount: 'Terbatas',
+        url: 'https://example.com/broker-b', affiliate: false, placeholder: true },
+    ];
+    const CONTACT = {
+      email: 'firdausnur016@gmail.com',
+      whatsapp: '0887435807507', whatsappUrl: 'https://wa.me/62887435807507',
+      telegram: '@vaa27tu', telegramUrl: 'https://t.me/vaa27tu',
+    };
+    const PLANS = [{ id: 'mingguan', label: 'Mingguan' }, { id: 'bulanan', label: 'Bulanan' }, { id: 'tahunan', label: 'Tahunan' }];
+    // TODO backend: sinyal ini hanya contoh di sisi klien. Nanti ambil dari
+    // endpoint server yang memeriksa status VIP pengguna (req.user.id) sebelum
+    // mengirim sinyal; daftar di bawah tidak boleh dipakai di produksi nyata.
+    const SIGNALS = [
+      { id: 1, pair: 'EURUSD', side: 'buy', entry: 1.0850, sl: 1.0825, tp1: 1.0900, tp2: 1.0950, timeframe: 'M15',
+        reason: 'Contoh: retest support 1.0850 setelah breakout, RSI naik dari area oversold.', releasedAt: '2026-10-01 14:30 WIB', status: 'aktif' },
+      { id: 2, pair: 'XAUUSD', side: 'sell', entry: 2650, sl: 2660, tp1: 2630, tp2: 2615, timeframe: 'H1',
+        reason: 'Contoh: rejection di resistance 2660, bearish engulfing H1.', releasedAt: '2026-10-01 09:00 WIB', status: 'tp' },
+      { id: 3, pair: 'GBPUSD', side: 'buy', entry: 1.3350, sl: 1.3310, tp1: 1.3430, tp2: 1.3500, timeframe: 'H4',
+        reason: 'Contoh: higher low di trendline H4, MA50 sebagai support dinamis.', releasedAt: '2026-09-30 20:15 WIB', status: 'aktif' },
+      { id: 4, pair: 'USDJPY', side: 'sell', entry: 143.50, sl: 143.90, tp1: 142.70, tp2: 142.00, timeframe: 'M30',
+        reason: 'Contoh: double top M30 di 143.90, divergensi RSI.', releasedAt: '2026-09-30 15:45 WIB', status: 'sl' },
+      { id: 5, pair: 'BTCUSD', side: 'buy', entry: 64000, sl: 63000, tp1: 66000, tp2: 68000, timeframe: 'H4',
+        reason: 'Contoh: pullback ke area demand 64.000, volume beli meningkat.', releasedAt: '2026-10-02 08:00 WIB', status: 'aktif' },
+    ];
+    const SIGNAL_STATUS = { aktif: 'Aktif', tp: 'TP', sl: 'SL' };
+
+    // State broker/VIP hidup di memori saja dan hilang saat halaman dimuat
+    // ulang (tanpa localStorage, sesuai permintaan). Login tidak perlu
+    // dibangun: platform sudah mengirim identitas lewat token iframe di
+    // `headers`, dan server memverifikasinya.
+    // TODO backend: simpan broker terpilih dan status VIP per req.user.id.
+    let selectedBrokerId = null;
+    let vip = { status: 'free', plan: null, name: null, email: null, whatsapp: null, brokerId: null };
+    let pendingSignup = null;
 
     // Units per 1 lot, used only when risk $ is left empty.
     const CONTRACT_SIZE = { forex: 100000, saham: 100, kripto: 1 };
@@ -419,6 +682,7 @@
       const violations = [];
       if (riskPct !== null && riskPct > 1) violations.push('Risiko ' + fmtNum(riskPct, 2) + '% melebihi 1% modal');
       if (plannedRR !== null && plannedRR < 2) violations.push('RR rencana 1:' + fmtNum(plannedRR, 2) + ' di bawah 1:2');
+      if (t.followed_plan === false) violations.push('Di luar plan');
       const status = violations.length ? 'bad' : (riskPct !== null && plannedRR !== null ? 'ok' : 'unknown');
       return { risk, riskDerived, riskPct, r, plannedRR, actualRR, violations, status, result };
     }
@@ -446,15 +710,15 @@
     }
 
     function badge(c) {
-      if (c.status === 'bad') return '<span class="inline-flex items-center gap-1 rounded-full bg-red-500/15 px-2 py-0.5 text-xs font-semibold text-red-300" title="' + esc(c.violations.join('; ')) + '">❌ Melanggar</span>';
-      if (c.status === 'ok') return '<span class="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs font-semibold text-emerald-300">✅ Disiplin</span>';
-      return '<span class="inline-flex items-center rounded-full bg-zinc-800 px-2 py-0.5 text-xs text-zinc-400" title="Isi entry, SL, TP, modal dan risiko atau lot untuk cek disiplin">Data kurang</span>';
+      if (c.status === 'bad') return '<span class="inline-flex items-center gap-1 rounded-full bg-sell/15 px-2 py-0.5 text-xs font-semibold text-sell" title="' + esc(c.violations.join('; ')) + '">❌ Melanggar</span>';
+      if (c.status === 'ok') return '<span class="inline-flex items-center gap-1 rounded-full bg-buy/15 px-2 py-0.5 text-xs font-semibold text-buy">✅ Disiplin</span>';
+      return '<span class="inline-flex items-center rounded-full bg-surface-2 px-2 py-0.5 text-xs text-muted" title="Isi entry, SL, TP, modal dan risiko atau lot untuk cek disiplin">Data kurang</span>';
     }
-    function resultClass(v) { return v === null ? 'text-zinc-400' : v > 0 ? 'text-emerald-300' : v < 0 ? 'text-red-300' : 'text-zinc-300'; }
+    function resultClass(v) { return v === null ? 'text-muted' : v > 0 ? 'text-buy' : v < 0 ? 'text-sell' : 'text-ink-2'; }
     function positionLabel(p) {
-      if (p === 'buy') return '<span class="text-emerald-300">Buy</span>';
-      if (p === 'sell') return '<span class="text-red-300">Sell</span>';
-      return '<span class="text-zinc-500">-</span>';
+      if (p === 'buy') return '<span class="text-buy">Buy</span>';
+      if (p === 'sell') return '<span class="text-sell">Sell</span>';
+      return '<span class="text-muted-2">-</span>';
     }
     function riskCell(c) {
       if (c.risk === null) return '-';
@@ -494,9 +758,33 @@
           ddPct = peakEquity > 0 ? dd / peakEquity * 100 : null;
         }
       }
+      const totalPL = done.length ? done.reduce((a, t) => a + num(t.result_amount), 0) : null;
+      const rrs = all.map(t => calc(t).plannedRR).filter(v => v !== null);
+      // Equity curve points and per-category totals for the summary card.
+      const equity = [];
+      let run = 0;
+      for (const t of ordered) { run += num(t.result_amount); equity.push({ date: t.trade_date, cum: run }); }
+      const byCategory = {};
+      for (const t of all) {
+        const key = t.category || 'tanpa_kategori';
+        const b = byCategory[key] || (byCategory[key] = { trades: 0, withResult: 0, wins: 0, totalPL: 0, totalR: 0, rCount: 0 });
+        b.trades++;
+        const res = num(t.result_amount);
+        if (res === null) continue;
+        b.withResult++;
+        if (res > 0) b.wins++;
+        b.totalPL += res;
+        const r = calc(t).r;
+        if (r !== null) { b.totalR += r; b.rCount++; }
+      }
       return {
         total: all.length,
         withResult: done.length,
+        totalPL,
+        avgPlannedRR: rrs.length ? rrs.reduce((a, b) => a + b, 0) / rrs.length : null,
+        plannedRRCount: rrs.length,
+        equity,
+        byCategory,
         excluded: all.length - done.length,
         wins,
         winRate: done.length ? wins / done.length * 100 : null,
@@ -520,10 +808,70 @@
       $('sum-dd-sub').textContent = s.ddPct === null ? '' : fmtPct(s.ddPct) + ' dari modal puncak';
       $('sum-excluded').textContent = s.excluded + ' trade tanpa hasil tidak dihitung.';
       $('sum-excluded').classList.toggle('hidden', !s.excluded);
+      $('sum-pl').textContent = fmtMoney(s.totalPL);
+      $('sum-pl').className = 'font-mono text-lg ' + resultClass(s.totalPL);
+      $('sum-avg-rr').textContent = fmtRR(s.avgPlannedRR);
+      $('sum-rr-sub').textContent = s.plannedRRCount ? 'Dari ' + s.plannedRRCount + ' trade dengan entry, SL dan TP' : '';
+      renderEquityChart(s.equity);
+      renderCategoryTable(s.byCategory);
+    }
+
+    // Cumulative P/L as one inline SVG line with a thin area under it and a
+    // dashed zero line; shown from 2 trades with a result.
+    function renderEquityChart(points) {
+      const chart = $('equity-chart'), stats = $('equity-stats'), note = $('equity-note');
+      const ok = points.length >= 2;
+      chart.classList.toggle('hidden', !ok);
+      stats.classList.toggle('hidden', !ok);
+      note.classList.toggle('hidden', ok);
+      if (!ok) { chart.innerHTML = ''; return; }
+      const vals = points.map(p => p.cum);
+      const hi = Math.max(...vals), lo = Math.min(...vals), cur = vals[vals.length - 1];
+      let top = Math.max(0, hi), bottom = Math.min(0, lo);
+      if (top === bottom) { top += 1; bottom -= 1; }
+      const W = 320, H = 120, P = 8;
+      const x = i => P + i * (W - 2 * P) / (vals.length - 1);
+      const y = v => P + (top - v) * (H - 2 * P) / (top - bottom);
+      const f = n => n.toFixed(1);
+      const line = vals.map((v, i) => (i ? 'L' : 'M') + f(x(i)) + ' ' + f(y(v))).join(' ');
+      const area = line + ' L' + f(x(vals.length - 1)) + ' ' + f(y(0)) + ' L' + f(x(0)) + ' ' + f(y(0)) + ' Z';
+      const dot = (i, v, cls) => '<circle cx="' + f(x(i)) + '" cy="' + f(y(v)) + '" r="3" class="' + cls + '" fill="currentColor"/>';
+      chart.innerHTML = '<svg viewBox="0 0 320 120" class="block w-full h-auto" role="img" aria-label="' +
+          esc('Grafik equity: tertinggi ' + fmtMoney(hi) + ', terendah ' + fmtMoney(lo) + ', saat ini ' + fmtMoney(cur)) + '">' +
+        '<line x1="' + P + '" x2="' + (W - P) + '" y1="' + f(y(0)) + '" y2="' + f(y(0)) + '" class="text-line-2" stroke="currentColor" stroke-dasharray="3 3" vector-effect="non-scaling-stroke"/>' +
+        '<path d="' + area + '" class="text-accent" fill="currentColor" fill-opacity="0.12"/>' +
+        '<path d="' + line + '" class="text-accent" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>' +
+        dot(vals.indexOf(hi), hi, 'text-buy') + dot(vals.indexOf(lo), lo, 'text-sell') + dot(vals.length - 1, cur, 'text-accent') +
+        '</svg>';
+      for (const [id, v] of [['eq-high', hi], ['eq-low', lo], ['eq-cur', cur]]) {
+        $(id).textContent = fmtMoney(v);
+        $(id).className = 'font-mono ' + resultClass(v);
+      }
+    }
+
+    const CATEGORY_LABELS = { forex: 'Forex', saham: 'Saham', kripto: 'Kripto', tanpa_kategori: 'Tanpa kategori' };
+    function renderCategoryTable(by) {
+      const keys = Object.keys(CATEGORY_LABELS).filter(k => by[k]);
+      $('cat-section').classList.toggle('hidden', !keys.length);
+      $('cat-tbody').innerHTML = keys.map(k => {
+        const b = by[k];
+        const wr = b.withResult ? b.wins / b.withResult * 100 : null;
+        const pl = b.withResult ? b.totalPL : null;
+        const r = b.rCount ? b.totalR : null;
+        return '<tr>' +
+          '<td class="px-3 py-2 whitespace-nowrap font-semibold">' + CATEGORY_LABELS[k] + '</td>' +
+          '<td class="px-3 py-2 text-right font-mono">' + b.trades + '</td>' +
+          '<td class="px-3 py-2 text-right font-mono whitespace-nowrap">' + fmtPct(wr) + (wr !== null ? ' <span class="text-xs text-muted-2">(' + b.wins + '/' + b.withResult + ')</span>' : '') + '</td>' +
+          '<td class="px-3 py-2 text-right font-mono whitespace-nowrap ' + resultClass(pl) + '">' + fmtMoney(pl) + '</td>' +
+          '<td class="px-3 py-2 text-right font-mono">' + fmtR(r) + '</td>' +
+        '</tr>';
+      }).join('');
     }
 
     function showListState(state) {
       $('summary').classList.toggle('hidden', state !== 'list' && state !== 'empty');
+      $('calc-tool').classList.toggle('hidden', state !== 'list' && state !== 'empty');
+      $('export-btn').classList.toggle('hidden', state !== 'list');
       $('list-loading').classList.toggle('hidden', state !== 'loading');
       $('list-error').classList.toggle('hidden', state !== 'error');
       $('list-empty').classList.toggle('hidden', state !== 'empty');
@@ -539,16 +887,16 @@
       if (!trades.length) return showListState('empty');
       const rows = trades.map(t => ({ t, c: calc(t) }));
       $('trade-list').innerHTML = rows.map(({ t, c }) =>
-        '<li><button type="button" data-id="' + t.id + '" class="trade-row w-full text-left px-4 py-3 flex flex-col gap-1.5 hover:bg-zinc-900 focus:outline-none focus-visible:bg-zinc-900">' +
+        '<li><button type="button" data-id="' + t.id + '" class="trade-row w-full text-left px-4 py-3 flex flex-col gap-1.5 hover:bg-surface focus:outline-none focus-visible:bg-surface">' +
           '<div class="flex items-center justify-between gap-2">' +
             '<span class="font-semibold">' + esc(t.instrument) + ' <span class="text-sm font-normal">' + positionLabel(t.position) + '</span></span>' +
             badge(c) +
           '</div>' +
           '<div class="flex items-center justify-between gap-2 text-sm">' +
-            '<span class="text-zinc-400">' + esc(fmtDate(t.trade_date)) + (t.entry_time ? ' ' + esc(t.entry_time) : '') + '</span>' +
+            '<span class="text-muted">' + esc(fmtDate(t.trade_date)) + (t.entry_time ? ' ' + esc(t.entry_time) : '') + '</span>' +
             '<span class="font-mono ' + resultClass(c.result) + '">' + fmtMoney(c.result) + (c.r !== null ? ' (' + fmtR(c.r) + ')' : '') + '</span>' +
           '</div>' +
-          '<div class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-zinc-400">' +
+          '<div class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted">' +
             '<span>Risiko ' + riskCell(c) + '</span>' +
             '<span>RR rencana ' + fmtRR(c.plannedRR) + '</span>' +
             '<span>RR aktual ' + fmtRR(c.actualRR) + '</span>' +
@@ -556,7 +904,7 @@
         '</button></li>'
       ).join('');
       $('trade-tbody').innerHTML = rows.map(({ t, c }) =>
-        '<tr data-id="' + t.id + '" tabindex="0" class="trade-row cursor-pointer hover:bg-zinc-900 focus:outline-none focus-visible:bg-zinc-900">' +
+        '<tr data-id="' + t.id + '" tabindex="0" class="trade-row cursor-pointer hover:bg-surface focus:outline-none focus-visible:bg-surface">' +
           '<td class="px-3 py-2 whitespace-nowrap">' + esc(fmtDate(t.trade_date)) + '</td>' +
           '<td class="px-3 py-2 whitespace-nowrap font-semibold">' + esc(t.instrument) + '</td>' +
           '<td class="px-3 py-2">' + positionLabel(t.position) + '</td>' +
@@ -634,6 +982,7 @@
       $('list-view').classList.toggle('hidden', name !== 'list');
       $('form-view').classList.toggle('hidden', name !== 'form');
       $('import-view').classList.toggle('hidden', name !== 'import');
+      $('export-view').classList.toggle('hidden', name !== 'export');
       window.scrollTo(0, 0);
     }
 
@@ -713,6 +1062,308 @@
     $('back-btn').addEventListener('click', () => showView('list'));
     $('retry-btn').addEventListener('click', loadTrades);
 
+    // ---- Ekspor CSV ---------------------------------------------------------
+    // Shown as text with a copy button: file downloads do not work in the
+    // published page. Headers match IMPORT_SYNONYMS so the file re-imports.
+    const MISTAKE_LABELS = { entry_terlalu_cepat: 'Entry terlalu cepat', sl_digeser: 'SL digeser', tp_dipotong: 'TP dipotong', overtrade: 'Overtrade', melanggar_risiko: 'Melanggar risiko', tanpa_setup: 'Tanpa setup' };
+    const EXPORT_HEADERS = ['Tanggal', 'Jam entry', 'Jam exit', 'Instrumen', 'Kategori', 'Posisi', 'Entry', 'SL', 'TP', 'Exit', 'Lot', 'Modal', 'Risiko', 'Hasil',
+      'Timeframe', 'Setup', 'Alasan entry', 'Emosi', 'Sesuai plan', 'Kesalahan', 'Pelajaran', 'Risiko % modal', 'RR rencana', 'RR aktual', 'R', 'Disiplin'];
+
+    function csvCell(v) {
+      const s = v === null || v === undefined ? '' : String(v);
+      return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+    }
+    function csvNum(v, max) {
+      const n = num(v);
+      if (n === null) return '';
+      return max === undefined ? String(n) : String(Math.round(n * 10 ** max) / 10 ** max);
+    }
+    function buildCsv(list) {
+      const ordered = list.slice().sort((a, b) =>
+        (a.trade_date || '').localeCompare(b.trade_date || '') ||
+        (a.entry_time || '').localeCompare(b.entry_time || '') ||
+        Number(a.id) - Number(b.id));
+      const rows = [EXPORT_HEADERS];
+      for (const t of ordered) {
+        const c = calc(t);
+        rows.push([t.trade_date, t.entry_time || '', t.exit_time || '', t.instrument, t.category || '', t.position || '',
+          csvNum(t.entry_price), csvNum(t.stop_loss), csvNum(t.take_profit), csvNum(t.exit_price), csvNum(t.lot_size), csvNum(t.capital), csvNum(t.risk_amount), csvNum(t.result_amount),
+          t.timeframe || '', t.setup || '', t.entry_reason || '', EMOTION_LABELS[t.emotion] || '',
+          t.followed_plan === true ? 'ya' : t.followed_plan === false ? 'tidak' : '',
+          (t.mistakes || []).map(m => MISTAKE_LABELS[m] || m).join('; '), t.lesson || '',
+          csvNum(c.riskPct, 2), csvNum(c.plannedRR, 2), csvNum(c.actualRR, 2), csvNum(c.r, 2),
+          c.status === 'ok' ? 'disiplin' : c.status === 'bad' ? 'melanggar' : 'data kurang']);
+      }
+      return rows.map(r => r.map(csvCell).join(',')).join('\r\n') + '\r\n';
+    }
+    function openExport() {
+      $('export-csv').value = buildCsv(trades);
+      $('export-error').classList.add('hidden');
+      $('copy-csv-btn').textContent = 'Salin CSV';
+      $('import-note').classList.add('hidden');
+      showView('export');
+    }
+    let copyTimer = null;
+    function copyDone(ok) {
+      if (!ok) {
+        $('export-error').textContent = 'Gagal menyalin. Pilih teks lalu salin manual.';
+        $('export-error').classList.remove('hidden');
+        return;
+      }
+      $('export-error').classList.add('hidden');
+      $('copy-csv-btn').textContent = 'Tersalin';
+      clearTimeout(copyTimer);
+      copyTimer = setTimeout(() => { $('copy-csv-btn').textContent = 'Salin CSV'; }, 2000);
+    }
+    $('copy-csv-btn').addEventListener('click', () => {
+      // Clipboard access must start inside the click handler. The frame has
+      // clipboard-write; the execCommand path is the fallback for old browsers.
+      const ta = $('export-csv');
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(ta.value).then(() => copyDone(true), () => copyDone(false));
+        return;
+      }
+      let ok = false;
+      try { ta.focus(); ta.select(); ok = document.execCommand('copy'); } catch {}
+      copyDone(ok);
+    });
+    $('export-btn').addEventListener('click', openExport);
+    $('export-back-btn').addEventListener('click', () => showView('list'));
+
+    // ---- Kalkulator lot & risiko --------------------------------------------
+    function updateLotCalc() {
+      const cap = num($('calc-capital').value), pct = num($('calc-risk-pct').value);
+      const sl = num($('calc-sl-dist').value), pip = num($('calc-pip-value').value);
+      const riskUsd = cap !== null && pct !== null && cap > 0 && pct > 0 ? cap * pct / 100 : null;
+      const lot = riskUsd !== null && sl !== null && pip !== null && sl > 0 && pip > 0 ? riskUsd / (sl * pip) : null;
+      $('lc-risk').textContent = riskUsd === null ? '-' : fmtMoney(riskUsd);
+      $('lc-lot').textContent = lot === null ? '-' : lot < 0.01 ? 'kurang dari 0,01 lot' : fmtNum(Math.floor(lot * 100) / 100, 2) + ' lot';
+      $('lc-tp').textContent = sl !== null && sl > 0 ? fmtNum(sl * 2) + ' pip/poin' : '-';
+      $('lc-profit').textContent = riskUsd === null ? '-' : fmtMoney(riskUsd * 2);
+      $('lc-warn').classList.toggle('hidden', !(pct !== null && pct > 1));
+    }
+    for (const id of ['calc-capital', 'calc-risk-pct', 'calc-sl-dist', 'calc-pip-value']) $(id).addEventListener('input', updateLotCalc);
+    updateLotCalc();
+
+    // ---- Tab dan navigasi bawah ---------------------------------------------
+    // Hash routes (#/jurnal, #/broker, #/sinyal, #/vip) so a tab can be shared
+    // and reopened. The Jurnal tab keeps its own sub-view (list/form/import).
+    const TABS = ['jurnal', 'broker', 'sinyal', 'vip'];
+    const TAB_VIEWS = { jurnal: 'jurnal-view', broker: 'broker-view', sinyal: 'signals-view', vip: 'vip-view' };
+    function currentTab() {
+      const m = /^#\/([a-z]+)/.exec(location.hash);
+      return m && TABS.includes(m[1]) ? m[1] : 'jurnal';
+    }
+    function showTab(name) {
+      for (const t of TABS) {
+        $(TAB_VIEWS[t]).classList.toggle('hidden', name !== t);
+        if (name === t) $('tab-' + t).setAttribute('aria-current', 'page');
+        else $('tab-' + t).removeAttribute('aria-current');
+      }
+      window.scrollTo(0, 0);
+    }
+    window.addEventListener('hashchange', () => showTab(currentTab()));
+
+    const bottomChrome = $('bottom-chrome');
+    function measureChrome() { document.documentElement.style.setProperty('--chrome-h', bottomChrome.offsetHeight + 'px'); }
+    if (window.ResizeObserver) new ResizeObserver(measureChrome).observe(bottomChrome);
+    measureChrome();
+
+    // ---- Broker -------------------------------------------------------------
+    function brokerName(id) {
+      const b = BROKERS.find(x => x.id === id);
+      return b ? b.name : id === 'lainnya' ? 'Lainnya' : '-';
+    }
+    function renderBrokers() {
+      const row = (k, v) => '<div class="flex justify-between gap-3 border-b border-line py-1.5 text-sm last:border-0"><dt class="text-muted">' + k + '</dt><dd class="text-right">' + esc(v) + '</dd></div>';
+      $('broker-list').innerHTML = BROKERS.map(b => {
+        const chosen = b.id === selectedBrokerId;
+        return '<article class="rounded-xl border ' + (chosen ? 'border-accent' : 'border-line') + ' p-4 flex flex-col gap-3">' +
+          '<div class="flex items-start justify-between gap-2"><h2 class="text-lg font-bold">' + esc(b.name) + '</h2>' +
+            (chosen ? '<span class="rounded-full bg-accent/15 px-2 py-0.5 text-xs font-semibold text-accent">Dipilih</span>'
+              : b.placeholder ? '<span class="rounded-full bg-surface-2 px-2 py-0.5 text-xs text-muted">Contoh (placeholder)</span>' : '') +
+          '</div>' +
+          '<dl>' + row('Regulasi', b.regulation) + row('Minimal deposit', b.minDeposit) + row('Tipe akun', b.accountTypes) +
+            row('Spread rata-rata', b.spread) + row('Platform', b.platforms) + row('Dukungan akun kecil', b.smallAccount) + '</dl>' +
+          (b.affiliate ? '<p class="text-xs text-muted">Link afiliasi: pembuat aplikasi dapat menerima komisi jika kamu mendaftar lewat link ini, tanpa biaya tambahan untukmu.</p>' : '') +
+          '<div class="mt-auto flex flex-col gap-2">' +
+            '<a href="' + esc(b.url) + '" target="_blank" rel="' + (b.affiliate ? 'noopener sponsored' : 'noopener') + '" class="rounded-lg bg-accent hover:bg-accent-hover px-4 py-2.5 text-center text-sm font-semibold text-on-accent no-underline focus:outline-none focus-visible:ring-2 focus-visible:ring-accent">Buka akun ' + esc(b.name) + '</a>' +
+            '<button type="button" data-broker-id="' + esc(b.id) + '" aria-pressed="' + (chosen ? 'true' : 'false') + '" class="rounded-lg border border-line-2 px-4 py-2.5 text-sm text-ink hover:bg-surface-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent">' + (chosen ? 'Dipilih' : 'Pilih broker') + '</button>' +
+          '</div></article>';
+      }).join('');
+    }
+    $('broker-list').addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-broker-id]');
+      if (!btn) return;
+      selectedBrokerId = btn.dataset.brokerId;
+      renderBrokers();
+      vipForm.elements.broker.value = selectedBrokerId;
+      setFieldError('broker', '');
+    });
+
+    // ---- VIP ------------------------------------------------------------------
+    const vipForm = $('vip-form');
+    vipForm.elements.broker.innerHTML = '<option value="">Pilih broker</option>' +
+      BROKERS.map(b => '<option value="' + esc(b.id) + '">' + esc(b.name) + '</option>').join('') + '<option value="lainnya">Lainnya</option>';
+    $('vip-plans').innerHTML = PLANS.map(p => '<label class="choice justify-center"><input type="radio" name="plan" value="' + esc(p.id) + '"> ' + esc(p.label) + '</label>').join('');
+
+    function renderContactCard() {
+      const link = (href, text) => '<a href="' + esc(href) + '" target="_blank" rel="noopener" class="text-accent hover:underline">' + esc(text) + '</a>';
+      return '<section class="rounded-xl border border-line p-4 flex flex-col gap-2" aria-label="Hubungi admin">' +
+        '<h2 class="text-sm font-semibold text-muted">Hubungi admin</h2>' +
+        '<ul class="flex flex-col gap-1 text-sm">' +
+          '<li>Email: <a href="mailto:' + esc(CONTACT.email) + '" class="text-accent hover:underline">' + esc(CONTACT.email) + '</a></li>' +
+          '<li>WhatsApp: ' + link(CONTACT.whatsappUrl, CONTACT.whatsapp) + '</li>' +
+          '<li>Telegram: ' + link(CONTACT.telegramUrl, CONTACT.telegram) + '</li>' +
+        '</ul></section>';
+    }
+    $('contact-card-form').innerHTML = renderContactCard();
+    $('contact-card-payment').innerHTML = renderContactCard();
+
+    function planLabel(id) { const p = PLANS.find(x => x.id === id); return p ? p.label : '-'; }
+    // 08xx, 62xx or +62xx, with spaces, dots or dashes allowed; returns +62...
+    function normalizeWa(raw) {
+      const m = /^(\+?62|0)(8\d{7,12})$/.exec(String(raw || '').replace(/[\s.\-()]/g, ''));
+      return m ? '+62' + m[2] : null;
+    }
+    function setFieldError(name, msg) {
+      const el = vipForm.querySelector('.field-error[data-for="' + name + '"]');
+      el.textContent = msg || '';
+      el.classList.toggle('hidden', !msg);
+    }
+    const VIP_FIELDS = ['name', 'email', 'whatsapp', 'broker', 'plan', 'agree'];
+    function clearVipErrors() {
+      for (const k of VIP_FIELDS) setFieldError(k, '');
+      $('vip-error').classList.add('hidden');
+    }
+    function renderVipStatus() {
+      const isVip = vip.status === 'vip';
+      $('vip-status-value').textContent = isVip ? 'VIP' : 'Gratis';
+      $('vip-status-value').className = 'text-lg font-bold' + (isVip ? ' text-accent' : '');
+      $('vip-status-sub').textContent = isVip ? 'Paket ' + planLabel(vip.plan) + ' (simulasi, hilang saat halaman dimuat ulang)' : 'Daftar VIP untuk membuka sinyal.';
+      $('vip-downgrade-btn').classList.toggle('hidden', !isVip);
+      $('vip-signup').classList.toggle('hidden', isVip);
+      if (!isVip) $('vip-success').classList.add('hidden');
+    }
+    function renderPaymentSummary(d) {
+      const item = (k, v) => '<div><dt class="text-xs text-muted-2">' + k + '</dt><dd>' + esc(v) + '</dd></div>';
+      $('payment-summary').innerHTML = item('Nama lengkap', d.name) + item('Email', d.email) + item('Nomor WhatsApp', d.whatsapp) +
+        item('Broker', brokerName(d.brokerId)) + item('Paket', planLabel(d.plan));
+    }
+
+    vipForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const fd = new FormData(vipForm);
+      const d = {
+        name: (fd.get('name') || '').toString().trim(),
+        email: (fd.get('email') || '').toString().trim(),
+        whatsapp: (fd.get('whatsapp') || '').toString().trim(),
+        brokerId: (fd.get('broker') || '').toString(),
+        plan: (fd.get('plan') || '').toString(),
+        agree: fd.get('agree') === 'on',
+      };
+      const errors = {};
+      if (d.name.length < 3) errors.name = 'Nama lengkap minimal 3 huruf.';
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.email)) errors.email = 'Format email tidak valid, contoh nama@email.com.';
+      const wa = normalizeWa(d.whatsapp);
+      if (!wa) errors.whatsapp = 'Nomor WhatsApp harus diawali 08 atau +62, contoh 0812xxxxxxx.';
+      if (!d.brokerId) errors.broker = 'Pilih broker yang kamu pakai.';
+      if (!d.plan) errors.plan = 'Pilih paket.';
+      if (!d.agree) errors.agree = 'Centang persetujuan risiko dan disclaimer.';
+      for (const k of VIP_FIELDS) setFieldError(k, errors[k]);
+      const bad = VIP_FIELDS.filter(k => errors[k]);
+      if (bad.length) {
+        $('vip-error').textContent = 'Periksa ' + bad.length + ' isian yang ditandai.';
+        $('vip-error').classList.remove('hidden');
+        const first = vipForm.elements[bad[0]];
+        (first instanceof RadioNodeList ? first[0] : first).focus();
+        return;
+      }
+      $('vip-error').classList.add('hidden');
+      pendingSignup = { ...d, whatsapp: wa };
+      // TODO backend: kirim pendaftaran ke server (POST dengan `headers`) dan
+      // buat invoice di payment gateway; tampilkan instruksi dari responsnya.
+      renderPaymentSummary(pendingSignup);
+      $('vip-signup').classList.add('hidden');
+      $('vip-payment').classList.remove('hidden');
+      window.scrollTo(0, 0);
+    });
+    $('payment-back-btn').addEventListener('click', () => {
+      $('vip-payment').classList.add('hidden');
+      $('vip-signup').classList.remove('hidden');
+    });
+    $('simulate-pay-btn').addEventListener('click', () => {
+      if (!pendingSignup) return;
+      // TODO backend: ganti simulasi ini dengan verifikasi webhook pembayaran
+      // di server, lalu simpan status VIP per req.user.id.
+      vip = { status: 'vip', plan: pendingSignup.plan, name: pendingSignup.name, email: pendingSignup.email, whatsapp: pendingSignup.whatsapp, brokerId: pendingSignup.brokerId };
+      pendingSignup = null;
+      $('vip-payment').classList.add('hidden');
+      renderVipStatus();
+      renderSignals();
+      $('vip-success').classList.remove('hidden');
+      window.scrollTo(0, 0);
+    });
+    $('vip-downgrade-btn').addEventListener('click', () => {
+      vip = { status: 'free', plan: null, name: null, email: null, whatsapp: null, brokerId: null };
+      pendingSignup = null;
+      vipForm.reset();
+      clearVipErrors();
+      if (selectedBrokerId) vipForm.elements.broker.value = selectedBrokerId;
+      $('vip-payment').classList.add('hidden');
+      renderVipStatus();
+      renderSignals();
+    });
+    vipForm.addEventListener('input', (e) => { if (e.target.name) setFieldError(e.target.name, ''); });
+    vipForm.addEventListener('change', (e) => { if (e.target.name) setFieldError(e.target.name, ''); });
+
+    // ---- Sinyal -----------------------------------------------------------------
+    $('signal-pair').innerHTML = '<option value="all">Semua</option>' +
+      [...new Set(SIGNALS.map(s => s.pair))].map(p => '<option value="' + esc(p) + '">' + esc(p) + '</option>').join('');
+
+    function signalCard(s) {
+      const buy = s.side === 'buy';
+      const rr = Math.abs(s.tp1 - s.entry) / Math.abs(s.entry - s.sl);
+      const statusCls = s.status === 'tp' ? 'bg-buy/15 text-buy' : s.status === 'sl' ? 'bg-sell/15 text-sell' : 'bg-accent/15 text-accent';
+      const cell = (k, v) => '<div><dt class="text-xs text-muted-2">' + k + '</dt><dd class="font-mono">' + esc(v) + '</dd></div>';
+      return '<article class="rounded-xl border border-line p-4 flex flex-col gap-3">' +
+        '<div class="flex items-center justify-between gap-2">' +
+          '<div class="flex items-center gap-2"><span class="font-bold">' + esc(s.pair) + '</span>' +
+            '<span class="rounded-full px-2 py-0.5 text-xs font-bold ' + (buy ? 'bg-buy/15 text-buy' : 'bg-sell/15 text-sell') + '">' + (buy ? 'BUY' : 'SELL') + '</span></div>' +
+          '<span class="rounded-full px-2 py-0.5 text-xs font-semibold ' + statusCls + '">' + SIGNAL_STATUS[s.status] + '</span>' +
+        '</div>' +
+        '<dl class="grid grid-cols-3 gap-x-3 gap-y-2 text-sm">' +
+          cell('Entry', fmtNum(s.entry)) + cell('SL', fmtNum(s.sl)) + cell('TP1', fmtNum(s.tp1)) +
+          cell('TP2', fmtNum(s.tp2)) + cell('RR', fmtRR(rr)) + cell('Timeframe', s.timeframe) +
+        '</dl>' +
+        '<p class="text-sm text-ink-2">' + esc(s.reason) + '</p>' +
+        '<p class="text-xs text-muted-2">Rilis ' + esc(s.releasedAt) + '</p>' +
+      '</article>';
+    }
+    function renderSignals() {
+      const isVip = vip.status === 'vip';
+      const list = $('signals-list');
+      $('signals-lock').classList.toggle('hidden', isVip);
+      $('signals-filters').classList.toggle('hidden', !isVip);
+      list.classList.toggle('locked', !isVip);
+      list.toggleAttribute('inert', !isVip);
+      list.setAttribute('aria-hidden', isVip ? 'false' : 'true');
+      let shown = SIGNALS;
+      if (isVip) {
+        const pair = $('signal-pair').value, st = $('signal-status').value;
+        shown = SIGNALS.filter(s => (pair === 'all' || s.pair === pair) && (st === 'all' || s.status === st));
+      }
+      list.innerHTML = shown.length ? shown.map(signalCard).join('')
+        : '<p class="rounded-xl border border-line p-6 text-center text-sm text-muted md:col-span-2">Tidak ada sinyal yang cocok.</p>';
+    }
+    $('signal-pair').addEventListener('change', renderSignals);
+    $('signal-status').addEventListener('change', renderSignals);
+
+    renderBrokers();
+    renderVipStatus();
+    renderSignals();
+    showTab(currentTab());
+
     // ---- Impor CSV ----------------------------------------------------------
     // The file is parsed here; the server revalidates every row and decides
     // which are new, duplicate or invalid (dryRun for the preview).
@@ -755,9 +1406,9 @@
       lesson: ['lesson', 'pelajaran'],
     };
     const STATUS_PILL = {
-      new: '<span class="inline-flex items-center rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs font-semibold text-emerald-300">Baru</span>',
-      duplicate: '<span class="inline-flex items-center rounded-full bg-zinc-800 px-2 py-0.5 text-xs text-zinc-400">Duplikat</span>',
-      invalid: '<span class="inline-flex items-center rounded-full bg-red-500/15 px-2 py-0.5 text-xs font-semibold text-red-300">Tidak valid</span>',
+      new: '<span class="inline-flex items-center rounded-full bg-buy/15 px-2 py-0.5 text-xs font-semibold text-buy">Baru</span>',
+      duplicate: '<span class="inline-flex items-center rounded-full bg-surface-2 px-2 py-0.5 text-xs text-muted">Duplikat</span>',
+      invalid: '<span class="inline-flex items-center rounded-full bg-sell/15 px-2 py-0.5 text-xs font-semibold text-sell">Tidak valid</span>',
     };
 
     let imp = null;        // { table, headerRow, headers, map, fixedCategory, fixedCapital }
@@ -1079,7 +1730,7 @@
           fixed = '<input data-fixed="capital" type="text" inputmode="decimal" placeholder="Sama untuk semua trade" aria-label="Modal sama untuk semua trade" value="' + esc(imp.fixedCapital) + '" class="field num' + (imp.map.capital === null ? '' : ' hidden') + '">';
         }
         const req = field === 'trade_date' || field === 'instrument';
-        return '<label class="flex flex-col gap-1 text-sm"><span class="text-zinc-300">' + esc(label) + (req ? ' <span class="text-red-300">*</span>' : '') + '</span>' +
+        return '<label class="flex flex-col gap-1 text-sm"><span class="text-ink-2">' + esc(label) + (req ? ' <span class="text-sell">*</span>' : '') + '</span>' +
           '<select data-field="' + field + '" class="field">' + options + '</select>' + fixed + '</label>';
       }).join('');
     }
@@ -1143,7 +1794,7 @@
       $('preview-counts').textContent = c ? c.new + ' baru, ' + c.duplicate + ' duplikat, ' + c.invalid + ' tidak valid' : '';
       const shown = impRows.slice(0, PREVIEW_ROWS).map(r => ({ r, c: calc(r.trade) }));
       const why = (r) => r.reason ? ' title="' + esc(r.reason) + '"' : '';
-      const reasonText = (r) => r.reason && r.status !== 'new' ? '<span class="text-xs text-zinc-500">' + esc(r.reason) + '</span>' : '';
+      const reasonText = (r) => r.reason && r.status !== 'new' ? '<span class="text-xs text-muted-2">' + esc(r.reason) + '</span>' : '';
       $('preview-list').innerHTML = shown.map(({ r, c }) =>
         '<li class="px-4 py-3 flex flex-col gap-1.5">' +
           '<div class="flex items-center justify-between gap-2">' +
@@ -1151,7 +1802,7 @@
             '<span' + why(r) + '>' + STATUS_PILL[r.status] + '</span>' +
           '</div>' +
           '<div class="flex items-center justify-between gap-2 text-sm">' +
-            '<span class="text-zinc-400">Baris ' + r.line + ' · ' + esc(fmtDate(r.trade.trade_date)) + (r.trade.entry_time ? ' ' + esc(r.trade.entry_time) : '') + '</span>' +
+            '<span class="text-muted">Baris ' + r.line + ' · ' + esc(fmtDate(r.trade.trade_date)) + (r.trade.entry_time ? ' ' + esc(r.trade.entry_time) : '') + '</span>' +
             '<span class="font-mono ' + resultClass(c.result) + '">' + fmtMoney(c.result) + '</span>' +
           '</div>' +
           '<div class="flex items-center justify-between gap-2">' + reasonText(r) + (r.status === 'invalid' ? '' : '<span class="ml-auto">' + badge(c) + '</span>') + '</div>' +
@@ -1159,7 +1810,7 @@
       ).join('');
       $('preview-tbody').innerHTML = shown.map(({ r, c }) =>
         '<tr>' +
-          '<td class="px-3 py-2 font-mono text-zinc-400">' + r.line + '</td>' +
+          '<td class="px-3 py-2 font-mono text-muted">' + r.line + '</td>' +
           '<td class="px-3 py-2 whitespace-nowrap"><span' + why(r) + '>' + STATUS_PILL[r.status] + '</span>' + (r.reason && r.status !== 'new' ? '<br>' + reasonText(r) : '') + '</td>' +
           '<td class="px-3 py-2 whitespace-nowrap">' + esc(fmtDate(r.trade.trade_date)) + '</td>' +
           '<td class="px-3 py-2 whitespace-nowrap font-semibold">' + esc(r.trade.instrument || '-') + '</td>' +
@@ -1218,11 +1869,11 @@
     }
 
     $('csv-input').addEventListener('change', (e) => handleFile(e.target.files[0]));
-    $('drop-zone').addEventListener('dragover', (e) => { e.preventDefault(); $('drop-zone').classList.add('border-violet-500'); });
-    $('drop-zone').addEventListener('dragleave', () => $('drop-zone').classList.remove('border-violet-500'));
+    $('drop-zone').addEventListener('dragover', (e) => { e.preventDefault(); $('drop-zone').classList.add('border-accent'); });
+    $('drop-zone').addEventListener('dragleave', () => $('drop-zone').classList.remove('border-accent'));
     $('drop-zone').addEventListener('drop', (e) => {
       e.preventDefault();
-      $('drop-zone').classList.remove('border-violet-500');
+      $('drop-zone').classList.remove('border-accent');
       handleFile(e.dataTransfer.files[0]);
     });
     $('map-grid').addEventListener('change', (e) => {

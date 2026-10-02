@@ -12,13 +12,75 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Colour tokens, as RGB triplets so Tailwind's opacity modifiers (bg-buy/15)
+ * keep working. tailwind.config.js maps them to semantic class names
+ * (bg-canvas, text-ink, text-buy, ...). The light values are the default;
+ * `.dark` on <html> (set by the theme bootstrap in index.html from the
+ * platform theme, falling back to the OS preference) switches to the dark
+ * set, which keeps the zinc palette the app shipped with. Green is Buy /
+ * profit, red-orange is Sell / loss, teal is the accent. */
+:root {
+  --c-canvas: 244 245 247;
+  --c-surface: 255 255 255;
+  --c-surface-2: 233 235 239;
+  --c-line: 226 229 234;
+  --c-line-2: 203 208 216;
+  --c-ink: 24 24 27;
+  --c-ink-2: 63 63 70;
+  --c-muted: 82 82 91;
+  --c-muted-2: 113 113 122;
+  --c-accent: 15 118 110;
+  --c-accent-hover: 17 94 89;
+  --c-on-accent: 255 255 255;
+  --c-buy: 21 128 61;
+  --c-sell: 194 65 12;
+  --c-warn: 180 83 9;
+}
+.dark {
+  --c-canvas: 9 9 11;
+  --c-surface: 24 24 27;
+  --c-surface-2: 39 39 42;
+  --c-line: 39 39 42;
+  --c-line-2: 63 63 70;
+  --c-ink: 244 244 245;
+  --c-ink-2: 212 212 216;
+  --c-muted: 161 161 170;
+  --c-muted-2: 113 113 122;
+  --c-accent: 45 212 191;
+  --c-accent-hover: 94 234 212;
+  --c-on-accent: 9 9 11;
+  --c-buy: 110 231 183;
+  --c-sell: 252 129 97;
+  --c-warn: 252 211 77;
+}
+
+@layer base {
+  input[type='radio'],
+  input[type='checkbox'] {
+    accent-color: rgb(var(--c-accent));
+  }
+}
+
 /* Shared form controls for the trade form. text-base keeps iOS from zooming
  * into a focused field. */
 @layer components {
   .field {
-    @apply w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-base text-zinc-100 placeholder-zinc-500 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500/40;
+    @apply w-full rounded-lg border border-line-2 bg-surface px-3 py-2 text-base text-ink placeholder-muted-2 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/40;
   }
   .choice {
-    @apply flex items-center gap-2 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-zinc-200 cursor-pointer;
+    @apply flex items-center gap-2 rounded-lg border border-line-2 bg-surface px-3 py-2 text-ink-2 cursor-pointer;
+  }
+  /* Bottom navigation tabs: large touch targets, accent when current. */
+  .tab-btn {
+    @apply flex min-h-[56px] flex-col items-center justify-center gap-0.5 text-xs font-semibold text-muted no-underline focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent;
+  }
+  .tab-btn[aria-current='page'] {
+    @apply text-accent;
+  }
+  /* Signals locked for non-VIP visitors: unreadable and inert. */
+  .locked {
+    filter: blur(6px);
+    pointer-events: none;
+    user-select: none;
   }
 }
