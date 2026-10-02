@@ -11,3 +11,14 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Shared form controls for the trade form. text-base keeps iOS from zooming
+ * into a focused field. */
+@layer components {
+  .field {
+    @apply w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-base text-zinc-100 placeholder-zinc-500 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500/40;
+  }
+  .choice {
+    @apply flex items-center gap-2 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-zinc-200 cursor-pointer;
+  }
+}

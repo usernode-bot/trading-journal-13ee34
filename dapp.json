@@ -7,7 +7,32 @@
       "path": "/",
       "expectSelector": "header img[src='/logo.svg']",
       "visual": true,
-      "impact": ["public/index.html", "public/logo.svg"]
+      "impact": [
+        "public/index.html",
+        "public/logo.svg"
+      ]
+    },
+    {
+      "name": "Empty journal offers the first trade",
+      "path": "/",
+      "expectText": "Belum ada trade"
+    },
+    {
+      "id": "journal.discipline",
+      "name": "Trade list shows risk, RR and discipline badges",
+      "path": "/?demo=1",
+      "expectText": "❌ Melanggar",
+      "visual": true,
+      "impact": [
+        "public/index.html",
+        "server.js",
+        "styles/**"
+      ]
+    },
+    {
+      "name": "Disciplined demo trade gets a check badge",
+      "path": "/?demo=1",
+      "expectText": "✅ Disiplin"
     }
   ]
 }
