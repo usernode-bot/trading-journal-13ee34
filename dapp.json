@@ -18,6 +18,38 @@
       "expectText": "Belum ada trade"
     },
     {
+      "name": "Language selector is available",
+      "path": "/",
+      "expectSelector": "#lang-select"
+    },
+    {
+      "id": "i18n.english",
+      "name": "English UI via the language override",
+      "path": "/?lang=en",
+      "expectText": "No trades yet",
+      "visual": true,
+      "impact": [
+        "public/index.html",
+        "public/i18n.js",
+        "server.js"
+      ]
+    },
+    {
+      "name": "Discipline badges switch to English",
+      "path": "/?demo=1&lang=en",
+      "expectText": "❌ Broken"
+    },
+    {
+      "name": "Arabic UI is translated and flips to RTL",
+      "path": "/?lang=ar",
+      "expectText": "لا صفقات بعد"
+    },
+    {
+      "name": "Disciplined demo trade gets a check badge in English",
+      "path": "/?demo=1&lang=en",
+      "expectText": "✅ Disciplined"
+    },
+    {
       "id": "journal.discipline",
       "name": "Trade list shows risk, RR and discipline badges",
       "path": "/?demo=1",

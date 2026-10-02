@@ -124,3 +124,15 @@ kripto) and sees auto-calculated risk %, R and RR plus a discipline badge
   found by ticket, or by the fingerprint date + instrument + position +
   entry time + entry price + lot (only when entry price and entry time or
   lot are present).
+- i18n lives in `public/i18n.js` (`window.TJ_I18N`: 20 languages, Indonesian
+  base, `?lang=xx` non-persistent override for tests). Default and fallback
+  are `id`; the per-user choice is stored in the `user_prefs` table via
+  `GET`/`PUT /api/prefs` and cached in `localStorage` (`tj-lang`, server wins).
+  In JS use `tr(key, vars)` (never `t` — it collides with the trade param),
+  in static markup `data-i18n` / `data-i18n-ph` / `data-i18n-aria` /
+  `data-i18n-title`; data constants reference keys as `{ k, n }` and display
+  code resolves them with `tr()`. Arabic flips `<html dir>` to RTL.
+- CSV export headers and the emotion/mistake label vocabulary stay Indonesian
+  on purpose (data format, so exports round-trip); the import UI translates
+  only the mapping labels, and server error strings are translated
+  client-side via the `SERR` map + `terr()` (dynamic ones need a regex).
