@@ -1,3 +1,13 @@
 {
-  "secrets": []
+  "secrets": [],
+  "tests": [
+    {
+      "id": "home.logo",
+      "name": "Header shows the app logo",
+      "path": "/",
+      "expectSelector": "header img[src='/logo.svg']",
+      "visual": true,
+      "impact": ["public/index.html", "public/logo.svg"]
+    }
+  ]
 }
