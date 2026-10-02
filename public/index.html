@@ -108,6 +108,18 @@
       <p id="demo-note" class="hidden px-1 text-sm text-amber-300">Contoh data staging. Trade ini tidak tersimpan dan tidak bisa diubah.</p>
       <p class="px-1 text-xs text-zinc-500">Disiplin: ✅ jika risiko maksimal 1% modal dan RR rencana minimal 1:2. ❌ jika salah satunya dilanggar. Risiko bertanda * dihitung otomatis (perkiraan).</p>
 
+      <section id="summary" class="hidden rounded-xl border border-zinc-800 p-4 flex flex-col gap-3" aria-labelledby="summary-title">
+        <h2 id="summary-title" class="text-sm font-semibold text-zinc-400">Ringkasan</h2>
+        <dl class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-x-4 gap-y-3">
+          <div><dt class="text-xs text-zinc-500">Total trade</dt><dd id="sum-total" class="font-mono text-lg">-</dd></div>
+          <div><dt class="text-xs text-zinc-500">Win rate</dt><dd id="sum-winrate" class="font-mono text-lg">-</dd><dd id="sum-winrate-sub" class="text-xs text-zinc-500"></dd></div>
+          <div><dt class="text-xs text-zinc-500">Total R</dt><dd id="sum-total-r" class="font-mono text-lg">-</dd></div>
+          <div><dt class="text-xs text-zinc-500">Rata-rata R</dt><dd id="sum-avg-r" class="font-mono text-lg">-</dd><dd id="sum-r-sub" class="text-xs text-zinc-500"></dd></div>
+          <div class="col-span-2 sm:col-span-1"><dt class="text-xs text-zinc-500">Max drawdown</dt><dd id="sum-dd" class="font-mono text-lg">-</dd><dd id="sum-dd-sub" class="text-xs text-zinc-500"></dd></div>
+        </dl>
+        <p id="sum-excluded" class="hidden text-xs text-zinc-500"></p>
+      </section>
+
       <div id="list-loading" class="px-1 py-10 text-center text-sm text-zinc-400">Memuat trade...</div>
 
       <div id="list-error" class="hidden rounded-xl border border-red-500/40 bg-red-500/10 p-4 text-sm">
@@ -370,7 +382,69 @@
       return fmtMoney(c.risk) + (c.riskDerived ? '*' : '') + (c.riskPct !== null ? ' (' + fmtPct(c.riskPct) + ')' : '');
     }
 
+    // Stats over trades that have a result $. Equity curve runs oldest first
+    // (date, then entry time with no-time trades first, then id), matching
+    // the list's newest-first order reversed.
+    function summarize(all) {
+      const done = all.filter(t => num(t.result_amount) !== null);
+      const wins = done.filter(t => num(t.result_amount) > 0).length;
+      const rs = done.map(t => calc(t).r).filter(r => r !== null);
+      const totalR = rs.length ? rs.reduce((a, b) => a + b, 0) : null;
+      const ordered = done.slice().sort((a, b) =>
+        (a.trade_date || '').localeCompare(b.trade_date || '') ||
+        (a.entry_time || '').localeCompare(b.entry_time || '') ||
+        Number(a.id) - Number(b.id));
+      // Starting balance: capital recorded on the earliest trade that has
+      // one, minus results booked before it.
+      let startCapital = null;
+      let cum = 0;
+      for (const t of ordered) {
+        const cap = num(t.capital);
+        if (cap !== null) { startCapital = cap - cum; break; }
+        cum += num(t.result_amount);
+      }
+      cum = 0;
+      let peak = 0, maxDd = 0, ddPct = null;
+      for (const t of ordered) {
+        cum += num(t.result_amount);
+        if (cum > peak) peak = cum;
+        const dd = peak - cum;
+        if (dd > maxDd) {
+          maxDd = dd;
+          const peakEquity = startCapital !== null ? startCapital + peak : null;
+          ddPct = peakEquity > 0 ? dd / peakEquity * 100 : null;
+        }
+      }
+      return {
+        total: all.length,
+        withResult: done.length,
+        excluded: all.length - done.length,
+        wins,
+        winRate: done.length ? wins / done.length * 100 : null,
+        totalR,
+        avgR: rs.length ? totalR / rs.length : null,
+        rCount: rs.length,
+        maxDd: done.length ? maxDd : null,
+        ddPct: done.length && maxDd === 0 && startCapital !== null ? 0 : ddPct,
+      };
+    }
+
+    function renderSummary() {
+      const s = summarize(trades);
+      $('sum-total').textContent = String(s.total);
+      $('sum-winrate').textContent = fmtPct(s.winRate);
+      $('sum-winrate-sub').textContent = s.withResult ? s.wins + ' menang dari ' + s.withResult : '';
+      $('sum-total-r').textContent = fmtR(s.totalR);
+      $('sum-avg-r').textContent = fmtR(s.avgR);
+      $('sum-r-sub').textContent = s.rCount && s.rCount < s.withResult ? 'Dari ' + s.rCount + ' trade dengan risiko' : '';
+      $('sum-dd').textContent = s.maxDd === null ? '-' : fmtMoney(s.maxDd === 0 ? 0 : -s.maxDd);
+      $('sum-dd-sub').textContent = s.ddPct === null ? '' : fmtPct(s.ddPct) + ' dari modal puncak';
+      $('sum-excluded').textContent = s.excluded + ' trade tanpa hasil tidak dihitung.';
+      $('sum-excluded').classList.toggle('hidden', !s.excluded);
+    }
+
     function showListState(state) {
+      $('summary').classList.toggle('hidden', state !== 'list' && state !== 'empty');
       $('list-loading').classList.toggle('hidden', state !== 'loading');
       $('list-error').classList.toggle('hidden', state !== 'error');
       $('list-empty').classList.toggle('hidden', state !== 'empty');
@@ -382,6 +456,7 @@
     }
 
     function renderList() {
+      renderSummary();
       if (!trades.length) return showListState('empty');
       const rows = trades.map(t => ({ t, c: calc(t) }));
       $('trade-list').innerHTML = rows.map(({ t, c }) =>

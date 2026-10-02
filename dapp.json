@@ -33,6 +33,21 @@
       "name": "Disciplined demo trade gets a check badge",
       "path": "/?demo=1",
       "expectText": "✅ Disiplin"
+    },
+    {
+      "name": "Empty journal summary shows dashes",
+      "path": "/",
+      "expectText": "Ringkasan"
+    },
+    {
+      "id": "journal.summary",
+      "name": "Summary shows win rate and max drawdown",
+      "path": "/?demo=1",
+      "expectText": "5,88% dari modal puncak",
+      "visual": true,
+      "impact": [
+        "public/index.html"
+      ]
     }
   ]
 }
