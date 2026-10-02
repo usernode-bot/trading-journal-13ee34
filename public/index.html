@@ -146,6 +146,18 @@
       <p id="import-note" class="hidden px-1 text-sm text-buy" role="status"></p>
       <p data-i18n="l_disc_note" class="px-1 text-xs text-muted-2">Disiplin: ✅ jika risiko maksimal 1% modal, RR rencana minimal 1:2 dan trade sesuai plan. ❌ jika salah satunya dilanggar. Risiko bertanda * dihitung otomatis (perkiraan).</p>
 
+      <section id="pnl-card" class="hidden rounded-xl border border-line p-4 flex flex-col gap-4" aria-labelledby="pnl-title">
+        <h2 id="pnl-title" data-i18n="pn_title" class="text-sm font-semibold text-muted">Profit & rugi</h2>
+        <dl id="pnl-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-3">
+          <div class="col-span-2 sm:col-span-1"><dt data-i18n="s_pl" class="text-xs text-muted-2">Total profit/loss</dt><dd id="pnl-pl" class="font-mono text-lg">-</dd></div>
+          <div><dt data-i18n="pn_wins" class="text-xs text-muted-2">Menang</dt><dd id="pnl-wins" class="font-mono text-lg">-</dd></div>
+          <div><dt data-i18n="pn_losses" class="text-xs text-muted-2">Kalah</dt><dd id="pnl-losses" class="font-mono text-lg">-</dd></div>
+          <div><dt data-i18n="pn_best" class="text-xs text-muted-2">Trade terbaik</dt><dd id="pnl-best" class="text-lg">-</dd></div>
+          <div><dt data-i18n="pn_worst" class="text-xs text-muted-2">Trade terburuk</dt><dd id="pnl-worst" class="text-lg">-</dd></div>
+        </dl>
+        <p id="pnl-empty" class="hidden text-sm text-muted"></p>
+      </section>
+
       <section id="summary" class="hidden rounded-xl border border-line p-4 flex flex-col gap-4" aria-labelledby="summary-title">
         <h2 id="summary-title" data-i18n="s_title" class="text-sm font-semibold text-muted">Ringkasan</h2>
         <dl class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-3">
@@ -883,6 +895,13 @@
         }
       }
       const totalPL = done.length ? done.reduce((a, t) => a + num(t.result_amount), 0) : null;
+      const losses = done.filter(t => num(t.result_amount) < 0).length;
+      // Best/worst resolved on the ordered array so ties keep the earlier
+      // trade (same date/time/id order the equity curve uses).
+      const best = ordered.length ? ordered.reduce((a, t) =>
+        num(t.result_amount) > num(a.result_amount) ? t : a) : null;
+      const worst = ordered.length ? ordered.reduce((a, t) =>
+        num(t.result_amount) < num(a.result_amount) ? t : a) : null;
       const rrs = all.map(t => calc(t).plannedRR).filter(v => v !== null);
       // Equity curve points and per-category totals for the summary card.
       const equity = [];
@@ -911,6 +930,9 @@
         byCategory,
         excluded: all.length - done.length,
         wins,
+        losses,
+        best: best ? { instrument: best.instrument, result: num(best.result_amount) } : null,
+        worst: worst ? { instrument: worst.instrument, result: num(worst.result_amount) } : null,
         winRate: done.length ? wins / done.length * 100 : null,
         totalR,
         avgR: rs.length ? totalR / rs.length : null,
@@ -936,6 +958,22 @@
       $('sum-pl').className = 'font-mono text-lg ' + resultClass(s.totalPL);
       $('sum-avg-rr').textContent = fmtRR(s.avgPlannedRR);
       $('sum-rr-sub').textContent = s.plannedRRCount ? tr('s_rr_sub', { n: s.plannedRRCount }) : '';
+      // PnL card: total P/L, wins/losses and best/worst trade. The empty
+      // state covers both an empty journal and trades without a Hasil ($).
+      const hasResults = s.withResult > 0;
+      $('pnl-empty').classList.toggle('hidden', hasResults);
+      $('pnl-grid').classList.toggle('hidden', !hasResults);
+      if (hasResults) {
+        $('pnl-pl').textContent = fmtMoney(s.totalPL);
+        $('pnl-pl').className = 'font-mono text-lg ' + resultClass(s.totalPL);
+        $('pnl-wins').textContent = String(s.wins);
+        $('pnl-losses').textContent = String(s.losses);
+        const tradeCell = (t) => '<span>' + esc(t.instrument) + '</span> <span class="font-mono ' + resultClass(t.result) + '">' + fmtMoney(t.result) + '</span>';
+        $('pnl-best').innerHTML = tradeCell(s.best);
+        $('pnl-worst').innerHTML = tradeCell(s.worst);
+      } else {
+        $('pnl-empty').textContent = tr('pn_empty');
+      }
       renderEquityChart(s.equity, s.total);
       renderCategoryTable(s.byCategory);
     }
@@ -1018,6 +1056,7 @@
     function showListState(state) {
       listState = state;
       $('summary').classList.toggle('hidden', state !== 'list' && state !== 'empty');
+      $('pnl-card').classList.toggle('hidden', state !== 'list' && state !== 'empty');
       $('calc-tool').classList.toggle('hidden', state !== 'list' && state !== 'empty');
       $('export-btn').classList.toggle('hidden', state !== 'list');
       $('list-loading').classList.toggle('hidden', state !== 'loading');

@@ -147,6 +147,32 @@
       "expectText": "Performa per kategori"
     },
     {
+      "id": "journal.pnl",
+      "name": "Kartu PnL menampilkan total profit/loss",
+      "path": "/?demo=1",
+      "expectText": "Trade terbaik",
+      "visual": true,
+      "impact": [
+        "public/index.html",
+        "public/i18n.js"
+      ]
+    },
+    {
+      "name": "Kartu PnL menampilkan trade terbaik dan terburuk dari data demo",
+      "path": "/?demo=1",
+      "expectText": "EURUSD $50,00"
+    },
+    {
+      "name": "Kartu PnL berbahasa Inggris",
+      "path": "/?demo=1&lang=en",
+      "expectText": "Best trade"
+    },
+    {
+      "name": "Jurnal tanpa hasil menampilkan pesan kosong kartu PnL",
+      "path": "/",
+      "expectText": "untuk melihat P/L di sini"
+    },
+    {
       "name": "Jurnal menawarkan ekspor CSV",
       "path": "/?demo=1",
       "expectSelector": "#export-btn"
