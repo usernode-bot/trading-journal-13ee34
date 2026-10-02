@@ -132,6 +132,16 @@
       ]
     },
     {
+      "name": "Grafik profit/loss memakai warna rugi di bawah nol",
+      "path": "/?demo=1",
+      "expectSelector": "#equity-chart g[data-pl='loss'] path.text-sell"
+    },
+    {
+      "name": "Jurnal kosong menjelaskan grafik profit/loss",
+      "path": "/",
+      "expectText": "grafik profit/loss kumulatif akan muncul di sini"
+    },
+    {
       "name": "Rekap per kategori tampil",
       "path": "/?demo=1",
       "expectText": "Performa per kategori"

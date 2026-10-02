@@ -18,8 +18,9 @@ VIP-gated signal list. UI copy is in Bahasa Indonesia.
   sit on every screen. All derived numbers (risk $, risk %, R, planned/actual
   RR, discipline badge) are computed client-side in `calc()` from the stored
   fields; `summarize()` adds the recap (win rate, total P/L, average planned
-  RR, max drawdown, per-category table) and the equity curve, drawn as an
-  inline SVG once two trades have a result.
+  RR, max drawdown, per-category table) and the profit/loss chart: cumulative
+  P/L by trade date as an inline SVG line from $0, green above zero and
+  red-orange below, drawn once one trade has a result.
 - Jurnal tab extras: a lot & risk calculator (nothing is saved) and
   `Ekspor CSV`, which shows the journal as CSV text with a `Salin CSV`
   button (downloads do not work in the published page). Its headers match
