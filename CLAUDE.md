@@ -99,3 +99,8 @@ kripto) and sees auto-calculated risk %, R and RR plus a discipline badge
   single place they are computed. When risk $ is empty it is estimated as
   |Entry - SL| x lot x contract size (forex 100000, saham 100, kripto 1).
 - Every trade field except date and instrument is optional.
+- `broker_ref` holds the broker ticket of an imported trade. It is not in
+  `WRITE_FIELDS`, so editing a trade never changes it. Import duplicates are
+  found by ticket, or by the fingerprint date + instrument + position +
+  entry time + entry price + lot (only when entry price and entry time or
+  lot are present).
