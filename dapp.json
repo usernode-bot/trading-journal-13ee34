@@ -49,5 +49,9 @@
         "public/index.html"
       ]
     }
-  ]
+  ],
+  "visibility": {
+    "build": "public",
+    "view": "public"
+  }
 }
