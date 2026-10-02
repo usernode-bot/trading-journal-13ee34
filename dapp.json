@@ -1,5 +1,8 @@
 {
   "secrets": [],
+  "icon": {
+    "image": "brand/icon.png"
+  },
   "tests": [
     {
       "id": "home.logo",
@@ -9,7 +12,9 @@
       "visual": true,
       "impact": [
         "public/index.html",
-        "public/logo.svg"
+        "public/logo.svg",
+        "brand/icon.svg",
+        "brand/icon.png"
       ]
     },
     {
