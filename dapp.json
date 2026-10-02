@@ -138,5 +138,11 @@
   "visibility": {
     "build": "public",
     "view": "public"
+  },
+  "governance": {
+    "approvers": "anyone",
+    "approvals": {
+      "atLeast": 21
+    }
   }
 }
