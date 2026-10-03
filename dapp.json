@@ -80,7 +80,7 @@
       "id": "journal.summary",
       "name": "Summary shows win rate and max drawdown",
       "path": "/?demo=1",
-      "expectText": "5,88% dari modal puncak",
+      "expectText": "8,24% dari modal puncak",
       "visual": true,
       "impact": [
         "public/index.html"
@@ -91,7 +91,7 @@
       "name": "PNL card shows total P&L, win rate and closed trades",
       "path": "/?demo=1",
       "expectSelector": "#pnl-card:not(.hidden)",
-      "expectText": "-$100,00",
+      "expectText": "-$160,00",
       "visual": true,
       "impact": [
         "public/index.html",
@@ -264,6 +264,62 @@
       "impact": [
         "public/index.html"
       ]
+    },
+    {
+      "id": "journal.advanced",
+      "name": "Advanced analysis shows profit factor, expectancy and streaks",
+      "path": "/?demo=1",
+      "expectText": "Profit factor",
+      "visual": true,
+      "impact": [
+        "public/index.html",
+        "public/i18n.js"
+      ]
+    },
+    {
+      "name": "Advanced analysis is hidden on an empty journal",
+      "path": "/",
+      "expectSelector": "#adv-section.hidden"
+    },
+    {
+      "name": "Calendar heatmap shows a day cell",
+      "path": "/?demo=1",
+      "expectSelector": "#cal-grid div"
+    },
+    {
+      "name": "Breakdown tables show session, instrument and setup",
+      "path": "/?demo=1",
+      "expectText": "Per sesi"
+    },
+    {
+      "name": "Daily loss limit banner fires on the demo account",
+      "path": "/?demo=1",
+      "expectSelector": "#limit-banner:not(.hidden)"
+    },
+    {
+      "name": "Quick log view opens from its deep link",
+      "path": "/#/cepat",
+      "expectText": "Catat cepat"
+    },
+    {
+      "name": "Accounts view shows the empty state",
+      "path": "/#/akun",
+      "expectText": "Belum ada akun"
+    },
+    {
+      "name": "Demo accounts appear in the accounts view",
+      "path": "/?demo=1#/akun",
+      "expectText": "Staging demo: Akun forex"
+    },
+    {
+      "name": "Trade form has the pre-trade checklist and account picker",
+      "path": "/",
+      "expectSelector": "#form-view input[name='checklist']"
+    },
+    {
+      "name": "Trade form has the account picker",
+      "path": "/",
+      "expectSelector": "#form-view select[name='account_id']"
     }
   ],
   "visibility": {
