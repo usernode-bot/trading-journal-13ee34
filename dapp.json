@@ -189,6 +189,21 @@
       ]
     },
     {
+      "id": "broker.real",
+      "name": "Broker tab lists real brokers, not placeholders",
+      "path": "/#/broker",
+      "expectText": "IC Markets",
+      "impact": [
+        "public/index.html",
+        "public/i18n.js"
+      ]
+    },
+    {
+      "name": "Broker tab shows a real crypto exchange",
+      "path": "/#/broker",
+      "expectText": "Spot, Futures"
+    },
+    {
       "name": "Sinyal terkunci untuk pengguna Gratis",
       "path": "/#/sinyal",
       "expectText": "Daftar VIP"
