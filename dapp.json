@@ -189,6 +189,31 @@
       ]
     },
     {
+      "id": "broker.exchanges",
+      "name": "Broker tab groups crypto exchanges separately",
+      "path": "/#/broker",
+      "expectText": "Bursa kripto",
+      "visual": true,
+      "impact": [
+        "public/index.html"
+      ]
+    },
+    {
+      "name": "Broker tab lists a crypto exchange",
+      "path": "/#/broker",
+      "expectText": "Indodax"
+    },
+    {
+      "name": "Broker tab lists an Indonesian stock broker",
+      "path": "/#/broker",
+      "expectText": "Ajaib Sekuritas"
+    },
+    {
+      "name": "VIP broker dropdown includes exchanges",
+      "path": "/#/vip",
+      "expectText": "Indodax"
+    },
+    {
       "name": "Sinyal terkunci untuk pengguna Gratis",
       "path": "/#/sinyal",
       "expectText": "Daftar VIP"

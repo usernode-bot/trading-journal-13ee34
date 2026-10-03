@@ -499,7 +499,7 @@
         <h1 data-i18n="br_title" class="text-xl font-bold">Pilih broker</h1>
         <p data-i18n="br_note" class="text-sm text-muted">Bandingkan lalu pilih broker yang kamu pakai. Data di bawah perlu kamu cek sendiri di situs resmi masing-masing broker.</p>
       </div>
-      <div id="broker-list" class="grid grid-cols-1 md:grid-cols-3 gap-3"></div>
+      <div id="broker-list" class="flex flex-col gap-5"></div>
     </section>
 
     <!-- Tab Sinyal -->
@@ -738,16 +738,57 @@
     // Tidak ada klaim "terbaik" atau "pasti": data broker ditulis apa adanya.
     // Display values are { k: 'key', n: 'param' } translation references, so
     // the same facts read in every language (see public/i18n.js).
+    // kind groups the cards ('broker' vs 'exchange'), category reuses the
+    // journal's Forex/Saham/Kripto vocabulary for the badge. Facts that change
+    // often (regulasi, deposit minimum, spread, tipe akun) point to 'br_check'
+    // instead of numbers we cannot keep accurate. Urutan bukan peringkat.
     const BROKERS = [
-      { id: 'exness', name: 'Exness', regulation: { k: 'br_check' }, minDeposit: { k: 'br_check' },
+      { id: 'exness', name: 'Exness', kind: 'broker', category: 'forex',
+        regulation: { k: 'br_check' }, minDeposit: { k: 'br_check' },
         accountTypes: { k: 'br_cent_std' }, spread: { k: 'br_check' }, platforms: 'MT4, MT5',
-        smallAccount: { k: 'yes' }, url: 'https://one.exnessonelink.com/a/agxv83hhzy?source=app', affiliate: true, placeholder: false },
-      { id: 'contoh-a', name: 'Broker Contoh A', regulation: { k: 'br_reg_ex', n: 'X' }, minDeposit: { k: 'br_dep_ex', n: '10' },
-        accountTypes: { k: 'br_micro_std' }, spread: { k: 'br_spread_ex', n: '1,2' }, platforms: 'MT4', smallAccount: { k: 'yes' },
-        url: 'https://example.com/broker-a', affiliate: false, placeholder: true },
-      { id: 'contoh-b', name: 'Broker Contoh B', regulation: { k: 'br_reg_ex', n: 'Y' }, minDeposit: { k: 'br_dep_ex', n: '100' },
-        accountTypes: { k: 'br_std' }, spread: { k: 'br_spread_ex', n: '0,8' }, platforms: 'MT5', smallAccount: { k: 'br_limited' },
-        url: 'https://example.com/broker-b', affiliate: false, placeholder: true },
+        smallAccount: { k: 'yes' }, url: 'https://one.exnessonelink.com/a/agxv83hhzy?source=app', affiliate: true },
+      { id: 'fbs', name: 'FBS', kind: 'broker', category: 'forex',
+        regulation: { k: 'br_check' }, minDeposit: { k: 'br_check' }, accountTypes: { k: 'br_check' },
+        spread: { k: 'br_check' }, platforms: 'MT4, MT5', smallAccount: { k: 'br_check' }, url: 'https://fbs.com', affiliate: false },
+      { id: 'xm', name: 'XM', kind: 'broker', category: 'forex',
+        regulation: { k: 'br_check' }, minDeposit: { k: 'br_check' }, accountTypes: { k: 'br_check' },
+        spread: { k: 'br_check' }, platforms: 'MT4, MT5', smallAccount: { k: 'br_check' }, url: 'https://xm.com', affiliate: false },
+      { id: 'octa', name: 'Octa', kind: 'broker', category: 'forex',
+        regulation: { k: 'br_check' }, minDeposit: { k: 'br_check' }, accountTypes: { k: 'br_check' },
+        spread: { k: 'br_check' }, platforms: 'MT4, MT5', smallAccount: { k: 'br_check' }, url: 'https://octa.com', affiliate: false },
+      { id: 'stockbit', name: 'Stockbit Sekuritas', kind: 'broker', category: 'saham',
+        regulation: { k: 'br_check' }, minDeposit: { k: 'br_check' }, accountTypes: { k: 'br_check' },
+        spread: { k: 'br_check' }, platforms: 'Aplikasi, Web', smallAccount: { k: 'br_check' }, url: 'https://stockbit.com', affiliate: false },
+      { id: 'ajaib', name: 'Ajaib Sekuritas', kind: 'broker', category: 'saham',
+        regulation: { k: 'br_check' }, minDeposit: { k: 'br_check' }, accountTypes: { k: 'br_check' },
+        spread: { k: 'br_check' }, platforms: 'Aplikasi, Web', smallAccount: { k: 'br_check' }, url: 'https://ajaib.co.id', affiliate: false },
+      { id: 'mirae', name: 'Mirae Asset Sekuritas', kind: 'broker', category: 'saham',
+        regulation: { k: 'br_check' }, minDeposit: { k: 'br_check' }, accountTypes: { k: 'br_check' },
+        spread: { k: 'br_check' }, platforms: 'Aplikasi, Web', smallAccount: { k: 'br_check' }, url: 'https://miraeasset.co.id', affiliate: false },
+      { id: 'mandiri-sekuritas', name: 'Mandiri Sekuritas', kind: 'broker', category: 'saham',
+        regulation: { k: 'br_check' }, minDeposit: { k: 'br_check' }, accountTypes: { k: 'br_check' },
+        spread: { k: 'br_check' }, platforms: 'Aplikasi, Web', smallAccount: { k: 'br_check' }, url: 'https://mandirisekuritas.co.id', affiliate: false },
+      { id: 'ipot', name: 'IPOT (IndoPremier)', kind: 'broker', category: 'saham',
+        regulation: { k: 'br_check' }, minDeposit: { k: 'br_check' }, accountTypes: { k: 'br_check' },
+        spread: { k: 'br_check' }, platforms: 'Aplikasi, Web', smallAccount: { k: 'br_check' }, url: 'https://indopremier.com', affiliate: false },
+      { id: 'indodax', name: 'Indodax', kind: 'exchange', category: 'kripto',
+        regulation: { k: 'br_check' }, minDeposit: { k: 'br_check' }, accountTypes: { k: 'br_check' },
+        spread: { k: 'br_check' }, platforms: 'Aplikasi, Web', smallAccount: { k: 'br_check' }, url: 'https://indodax.co.id', affiliate: false },
+      { id: 'tokocrypto', name: 'Tokocrypto', kind: 'exchange', category: 'kripto',
+        regulation: { k: 'br_check' }, minDeposit: { k: 'br_check' }, accountTypes: { k: 'br_check' },
+        spread: { k: 'br_check' }, platforms: 'Aplikasi, Web', smallAccount: { k: 'br_check' }, url: 'https://tokocrypto.com', affiliate: false },
+      { id: 'pintu', name: 'Pintu', kind: 'exchange', category: 'kripto',
+        regulation: { k: 'br_check' }, minDeposit: { k: 'br_check' }, accountTypes: { k: 'br_check' },
+        spread: { k: 'br_check' }, platforms: 'Aplikasi, Web', smallAccount: { k: 'br_check' }, url: 'https://pintu.co.id', affiliate: false },
+      { id: 'binance', name: 'Binance', kind: 'exchange', category: 'kripto',
+        regulation: { k: 'br_check' }, minDeposit: { k: 'br_check' }, accountTypes: { k: 'br_check' },
+        spread: { k: 'br_check' }, platforms: 'Aplikasi, Web', smallAccount: { k: 'br_check' }, url: 'https://binance.com', affiliate: false },
+      { id: 'bybit', name: 'Bybit', kind: 'exchange', category: 'kripto',
+        regulation: { k: 'br_check' }, minDeposit: { k: 'br_check' }, accountTypes: { k: 'br_check' },
+        spread: { k: 'br_check' }, platforms: 'Aplikasi, Web', smallAccount: { k: 'br_check' }, url: 'https://bybit.com', affiliate: false },
+      { id: 'okx', name: 'OKX', kind: 'exchange', category: 'kripto',
+        regulation: { k: 'br_check' }, minDeposit: { k: 'br_check' }, accountTypes: { k: 'br_check' },
+        spread: { k: 'br_check' }, platforms: 'Aplikasi, Web', smallAccount: { k: 'br_check' }, url: 'https://okx.com', affiliate: false },
     ];
     const CONTACT = {
       email: 'firdausnur016@gmail.com',
@@ -1349,12 +1390,14 @@
     }
     function renderBrokers() {
       const row = (k, v) => '<div class="flex justify-between gap-3 border-b border-line py-1.5 text-sm last:border-0"><dt class="text-muted">' + k + '</dt><dd class="text-right">' + esc(v) + '</dd></div>';
-      $('broker-list').innerHTML = BROKERS.map(b => {
+      const card = (b) => {
         const chosen = b.id === selectedBrokerId;
         return '<article class="rounded-xl border ' + (chosen ? 'border-accent' : 'border-line') + ' p-4 flex flex-col gap-3">' +
-          '<div class="flex items-start justify-between gap-2"><h2 class="text-lg font-bold">' + esc(b.name) + '</h2>' +
-            (chosen ? '<span class="rounded-full bg-accent/15 px-2 py-0.5 text-xs font-semibold text-accent">' + esc(tr('br_chosen')) + '</span>'
-              : b.placeholder ? '<span class="rounded-full bg-surface-2 px-2 py-0.5 text-xs text-muted">' + esc(tr('br_ph')) + '</span>' : '') +
+          '<div class="flex items-start justify-between gap-2"><h3 class="text-lg font-bold">' + esc(b.name) + '</h3>' +
+            '<div class="flex shrink-0 flex-wrap items-center justify-end gap-1">' +
+              '<span class="rounded-full bg-surface-2 px-2 py-0.5 text-xs text-muted">' + esc(tr(CATEGORY_KEYS[b.category] || b.category)) + '</span>' +
+              (chosen ? '<span class="rounded-full bg-accent/15 px-2 py-0.5 text-xs font-semibold text-accent">' + esc(tr('br_chosen')) + '</span>' : '') +
+            '</div>' +
           '</div>' +
           '<dl>' + row(esc(tr('br_reg')), bv(b.regulation)) + row(esc(tr('br_mindep')), bv(b.minDeposit)) + row(esc(tr('br_types')), bv(b.accountTypes)) +
             row(esc(tr('br_spread')), bv(b.spread)) + row(esc(tr('br_plat')), b.platforms) + row(esc(tr('br_small')), bv(b.smallAccount)) + '</dl>' +
@@ -1363,7 +1406,14 @@
             '<a href="' + esc(b.url) + '" target="_blank" rel="' + (b.affiliate ? 'noopener sponsored' : 'noopener') + '" class="rounded-lg bg-accent hover:bg-accent-hover px-4 py-2.5 text-center text-sm font-semibold text-on-accent no-underline focus:outline-none focus-visible:ring-2 focus-visible:ring-accent">' + esc(tr('br_open', { n: b.name })) + '</a>' +
             '<button type="button" data-broker-id="' + esc(b.id) + '" aria-pressed="' + (chosen ? 'true' : 'false') + '" class="rounded-lg border border-line-2 px-4 py-2.5 text-sm text-ink hover:bg-surface-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent">' + esc(chosen ? tr('br_chosen') : tr('br_pick')) + '</button>' +
           '</div></article>';
-      }).join('');
+      };
+      const section = (kind, titleKey) => {
+        const list = BROKERS.filter(b => b.kind === kind);
+        if (!list.length) return '';
+        return '<h2 class="text-sm font-semibold text-muted">' + esc(tr(titleKey)) + '</h2>' +
+          '<div class="grid grid-cols-1 md:grid-cols-3 gap-3">' + list.map(card).join('') + '</div>';
+      };
+      $('broker-list').innerHTML = section('broker', 'br_sec_broker') + section('exchange', 'br_sec_exchange');
     }
     $('broker-list').addEventListener('click', (e) => {
       const btn = e.target.closest('[data-broker-id]');
@@ -1380,8 +1430,11 @@
     // language change, keeping whatever the user had selected.
     function renderVipStatic() {
       const prevBroker = vipForm.elements.broker.value;
+      const optgroup = (kind, titleKey) => '<optgroup label="' + esc(tr(titleKey)) + '">' +
+        BROKERS.filter(b => b.kind === kind).map(b => '<option value="' + esc(b.id) + '">' + esc(b.name) + '</option>').join('') + '</optgroup>';
       vipForm.elements.broker.innerHTML = '<option value="">' + esc(tr('br_pick')) + '</option>' +
-        BROKERS.map(b => '<option value="' + esc(b.id) + '">' + esc(b.name) + '</option>').join('') + '<option value="lainnya">' + esc(tr('br_other')) + '</option>';
+        optgroup('broker', 'br_sec_broker') + optgroup('exchange', 'br_sec_exchange') +
+        '<option value="lainnya">' + esc(tr('br_other')) + '</option>';
       if (prevBroker) vipForm.elements.broker.value = prevBroker;
       const prevPlan = vipForm.querySelector('input[name="plan"]:checked');
       $('vip-plans').innerHTML = PLANS.map(p => '<label class="choice justify-center"><input type="radio" name="plan" value="' + esc(p.id) + '"> ' + esc(tr(p.k)) + '</label>').join('');
