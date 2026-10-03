@@ -482,6 +482,87 @@
     </section>
     </div>
 
+    <!-- Tab Berita: daftar berita pasar + filter; editor khusus admin -->
+    <section id="news-view" class="hidden flex flex-col gap-4">
+      <div class="px-1">
+        <h1 data-i18n="n_title" class="text-xl font-bold">Berita pasar</h1>
+        <p data-i18n="n_note" class="text-sm text-muted">Berita dan kalender ekonomi yang dapat mempengaruhi pergerakan harga. Hanya informasi, bukan nasihat keuangan.</p>
+      </div>
+
+      <details id="news-editor" class="hidden rounded-xl border border-line">
+        <summary class="cursor-pointer select-none rounded-xl px-4 py-3 text-sm font-semibold text-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-accent" data-i18n="n_add">Tambah berita</summary>
+        <form id="news-form" class="flex flex-col gap-3 border-t border-line p-4" novalidate>
+          <label class="flex flex-col gap-1 text-sm"><span class="text-ink-2" data-i18n="n_f_title">Judul</span>
+            <input name="title" type="text" maxlength="200" class="field"></label>
+          <div class="grid grid-cols-2 gap-3">
+            <label class="flex flex-col gap-1 text-sm"><span class="text-ink-2" data-i18n="c_cat">Kategori</span>
+              <select name="category" class="field">
+                <option value="ekonomi" data-i18n="cat_ekonomi">Ekonomi</option>
+                <option value="forex" data-i18n="cat_forex">Forex</option>
+                <option value="saham" data-i18n="cat_saham">Saham</option>
+                <option value="kripto" data-i18n="cat_kripto">Kripto</option>
+              </select></label>
+            <label class="flex flex-col gap-1 text-sm"><span class="text-ink-2" data-i18n="n_f_imp">Penting</span>
+              <select name="importance" class="field">
+                <option value="tinggi" data-i18n="n_imp_tinggi">Tinggi</option>
+                <option value="sedang" data-i18n="n_imp_sedang">Sedang</option>
+                <option value="rendah" data-i18n="n_imp_rendah">Rendah</option>
+              </select></label>
+            <label class="flex flex-col gap-1 text-sm"><span class="text-ink-2" data-i18n="n_sent">Sentimen</span>
+              <select name="sentiment" class="field">
+                <option value="bullish" data-i18n="n_bullish">Bullish</option>
+                <option value="bearish" data-i18n="n_bearish">Bearish</option>
+                <option value="netral" data-i18n="n_netral">Netral</option>
+              </select></label>
+            <label class="flex flex-col gap-1 text-sm"><span class="text-ink-2" data-i18n="h_date">Tanggal</span>
+              <input name="event_date" type="date" class="field"></label>
+            <label class="flex flex-col gap-1 text-sm"><span class="text-ink-2" data-i18n="n_f_time">Jam (opsional)</span>
+              <input name="event_time" type="time" class="field"></label>
+          </div>
+          <label class="flex flex-col gap-1 text-sm"><span class="text-ink-2" data-i18n="n_syms">Simbol terdampak</span>
+            <input name="symbols" type="text" autocapitalize="characters" placeholder="EURUSD, BBCA, BTCUSDT" class="field">
+            <span data-i18n="n_syms_help" class="text-xs text-muted-2">Pisahkan dengan koma. Harus sama dengan nama instrumen di jurnal, contoh EURUSD, BBCA, BTCUSDT.</span></label>
+          <label class="flex flex-col gap-1 text-sm"><span class="text-ink-2" data-i18n="n_f_sum">Ringkasan</span>
+            <textarea name="summary" rows="3" maxlength="2000" class="field"></textarea></label>
+          <label class="flex flex-col gap-1 text-sm"><span class="text-ink-2" data-i18n="n_f_url">Sumber (URL, opsional)</span>
+            <input name="source_url" type="url" maxlength="500" placeholder="https://" class="field"></label>
+          <p id="news-form-error" class="hidden text-sm text-sell" role="alert"></p>
+          <div class="flex sm:justify-end">
+            <button type="submit" id="news-save-btn" class="rounded-lg bg-accent hover:bg-accent-hover px-5 py-2.5 text-sm font-semibold text-on-accent disabled:opacity-60 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent">Simpan berita</button>
+          </div>
+        </form>
+      </details>
+
+      <div class="grid grid-cols-2 gap-3">
+        <label class="flex flex-col gap-1 text-sm"><span class="text-ink-2" data-i18n="c_cat">Kategori</span>
+          <select id="news-category" class="field">
+            <option value="all" data-i18n="sg_all">Semua</option>
+            <option value="ekonomi" data-i18n="cat_ekonomi">Ekonomi</option>
+            <option value="forex" data-i18n="cat_forex">Forex</option>
+            <option value="saham" data-i18n="cat_saham">Saham</option>
+            <option value="kripto" data-i18n="cat_kripto">Kripto</option>
+          </select></label>
+        <label class="flex flex-col gap-1 text-sm"><span class="text-ink-2" data-i18n="n_sent">Sentimen</span>
+          <select id="news-sentiment" class="field">
+            <option value="all" data-i18n="sg_all">Semua</option>
+            <option value="bullish" data-i18n="n_bullish">Bullish</option>
+            <option value="bearish" data-i18n="n_bearish">Bearish</option>
+            <option value="netral" data-i18n="n_netral">Netral</option>
+          </select></label>
+      </div>
+
+      <div id="news-loading" data-i18n="n_loading" class="px-1 py-10 text-center text-sm text-muted">Memuat berita...</div>
+      <div id="news-error" class="hidden rounded-xl border border-sell/40 bg-sell/10 p-4 text-sm">
+        <p data-i18n="n_load_err" class="text-sell">Gagal memuat berita. Periksa koneksi lalu coba lagi.</p>
+        <button type="button" id="news-retry-btn" data-i18n="l_retry" class="mt-3 rounded-lg border border-line-2 px-3 py-1.5 text-ink hover:bg-surface-2">Coba lagi</button>
+      </div>
+      <div id="news-empty" class="hidden rounded-xl border border-line p-8 text-center">
+        <p data-i18n="n_empty_t" class="font-semibold">Belum ada berita</p>
+        <p data-i18n="n_empty_b" class="text-sm text-muted">Berita pasar yang dapat mempengaruhi harga akan tampil di sini.</p>
+      </div>
+      <div id="news-list" class="hidden grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+    </section>
+
     <!-- Tab Broker -->
     <section id="broker-view" class="hidden flex flex-col gap-4">
       <div class="px-1">
@@ -586,10 +667,13 @@
   <!-- Disclaimer tetap + navigasi bawah, di semua halaman -->
   <div id="bottom-chrome" class="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-surface/95 backdrop-blur" style="padding-bottom: var(--un-safe-inset-bottom, env(safe-area-inset-bottom, 0px))">
     <footer data-i18n="foot" class="px-4 py-1.5 text-center text-[11px] leading-snug text-muted-2">Trading berisiko tinggi dan dapat menyebabkan kehilangan modal. Sinyal bukan nasihat keuangan dan tidak ada jaminan profit. Gunakan hanya dana yang siap hilang.</footer>
-    <nav class="mx-auto grid max-w-5xl grid-cols-4" data-i18n-aria="nav_aria" aria-label="Menu utama">
+    <nav class="mx-auto grid max-w-5xl grid-cols-5" data-i18n-aria="nav_aria" aria-label="Menu utama">
       <a href="#/jurnal" id="tab-jurnal" class="tab-btn" aria-current="page">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h4"/></svg>
         <span data-i18n="nav_jurnal">Jurnal</span></a>
+      <a href="#/berita" id="tab-berita" class="tab-btn">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14.5 14.5 0 0 1 0 18M12 3a14.5 14.5 0 0 0 0 18"/></svg>
+        <span data-i18n="nav_berita">Berita</span></a>
       <a href="#/broker" id="tab-broker" class="tab-btn">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10l9-6 9 6"/><path d="M5 10v9M10 10v9M14 10v9M19 10v9"/><path d="M3 19h18"/></svg>
         <span data-i18n="nav_broker">Broker</span></a>
@@ -633,6 +717,18 @@
       'Gagal menyimpan trade': 'e_save',
       'Tidak ada baris untuk diimpor': 'i_no_rows',
       'Trade tidak ditemukan': 'i_not_found',
+      'Judul wajib diisi': 'n_e_title',
+      'Kategori tidak valid': 'n_e_cat',
+      'Sentimen tidak valid': 'n_e_sent',
+      'Tingkat kepentingan tidak valid': 'n_e_imp',
+      'Simbol tidak valid': 'n_e_syms',
+      'Maksimal 10 simbol': 'n_e_symmax',
+      'URL sumber tidak valid': 'n_e_url',
+      'Tidak diizinkan': 'n_e_forbidden',
+      'Gagal memuat berita': 'n_e_load',
+      'Gagal menyimpan berita': 'n_e_save',
+      'Gagal menghapus berita': 'n_e_del',
+      'Berita tidak ditemukan': 'n_e_notfound',
     };
     function terr(msg) {
       if (msg && SERR[msg]) return tr(SERR[msg]);
@@ -667,6 +763,7 @@
       renderVipStatus();
       renderVipStatic();
       renderSignals();
+      renderNews();
       updateLotCalc();
       showListState(listState);   // keeps loading/error states intact
       if (listState === 'list' || listState === 'empty') renderList();
@@ -1037,7 +1134,7 @@
       $('trade-list').innerHTML = rows.map(({ t, c }) =>
         '<li><button type="button" data-id="' + t.id + '" class="trade-row w-full text-left px-4 py-3 flex flex-col gap-1.5 hover:bg-surface focus:outline-none focus-visible:bg-surface">' +
           '<div class="flex items-center justify-between gap-2">' +
-            '<span class="font-semibold">' + esc(t.instrument) + ' <span class="text-sm font-normal">' + positionLabel(t.position) + '</span></span>' +
+            '<span class="font-semibold">' + esc(t.instrument) + newsChip(t) + ' <span class="text-sm font-normal">' + positionLabel(t.position) + '</span></span>' +
             badge(c) +
           '</div>' +
           '<div class="flex items-center justify-between gap-2 text-sm">' +
@@ -1054,7 +1151,7 @@
       $('trade-tbody').innerHTML = rows.map(({ t, c }) =>
         '<tr data-id="' + t.id + '" tabindex="0" class="trade-row cursor-pointer hover:bg-surface focus:outline-none focus-visible:bg-surface">' +
           '<td class="px-3 py-2 whitespace-nowrap">' + esc(fmtDate(t.trade_date)) + '</td>' +
-          '<td class="px-3 py-2 whitespace-nowrap font-semibold">' + esc(t.instrument) + '</td>' +
+          '<td class="px-3 py-2 whitespace-nowrap font-semibold">' + esc(t.instrument) + newsChip(t) + '</td>' +
           '<td class="px-3 py-2">' + positionLabel(t.position) + '</td>' +
           '<td class="px-3 py-2 text-right font-mono">' + fmtPrice(t.entry_price) + '</td>' +
           '<td class="px-3 py-2 text-right font-mono">' + fmtPrice(t.stop_loss) + '</td>' +
@@ -1295,10 +1392,10 @@
     updateLotCalc();
 
     // ---- Tab dan navigasi bawah ---------------------------------------------
-    // Hash routes (#/jurnal, #/broker, #/sinyal, #/vip) so a tab can be shared
-    // and reopened. The Jurnal tab keeps its own sub-view (list/form/import).
-    const TABS = ['jurnal', 'broker', 'sinyal', 'vip'];
-    const TAB_VIEWS = { jurnal: 'jurnal-view', broker: 'broker-view', sinyal: 'signals-view', vip: 'vip-view' };
+    // Hash routes (#/jurnal, #/berita, #/broker, #/sinyal, #/vip) so a tab can be
+    // shared and reopened. The Jurnal tab keeps its own sub-view (list/form/import).
+    const TABS = ['jurnal', 'berita', 'broker', 'sinyal', 'vip'];
+    const TAB_VIEWS = { jurnal: 'jurnal-view', berita: 'news-view', broker: 'broker-view', sinyal: 'signals-view', vip: 'vip-view' };
     function currentTab() {
       const m = /^#\/([a-z]+)/.exec(location.hash);
       return m && TABS.includes(m[1]) ? m[1] : 'jurnal';
@@ -2072,7 +2169,160 @@
     $('empty-import-btn').addEventListener('click', openImport);
     $('import-back-btn').addEventListener('click', () => { resetImport(); showView('list'); });
 
+    // ---- Berita pasar -------------------------------------------------------
+    // Shared admin-curated news from /api/news. Nothing derived is stored:
+    // the related-trades count and the journal's news marker are computed
+    // here from the loaded news + trades.
+    let news = [];
+    let newsCanEdit = false;
+    let newsState = 'loading';   // 'loading' | 'ok' | 'error', like listState
+    let newsBusy = false;
+
+    function newsHits(t) {
+      const instr = (t.instrument || '').toUpperCase();
+      if (!instr) return [];
+      return news.filter(n => n.symbols.includes(instr) && n.event_date === t.trade_date);
+    }
+
+    // Journal marker: a small newspaper chip when high-impact news touches
+    // the trade's instrument on the same date. Tooltip lists the headlines.
+    function newsChip(t) {
+      const hits = newsHits(t).filter(n => n.importance === 'tinggi');
+      if (!hits.length) return '';
+      return ' <span class="news-chip text-warn" title="' +
+        esc(tr('n_marker') + ': ' + hits.map(n => n.title).join('; ')) +
+        '" aria-label="' + esc(tr('n_marker')) + '">📰</span>';
+    }
+
+    function newsCard(n) {
+      const sentCls = n.sentiment === 'bullish' ? 'bg-buy/15 text-buy' : n.sentiment === 'bearish' ? 'bg-sell/15 text-sell' : 'bg-surface-2 text-muted';
+      const impCls = n.importance === 'tinggi' ? 'bg-warn/15 text-warn' : 'bg-surface-2 text-muted';
+      const related = n.symbols.length
+        ? trades.filter(t => n.symbols.includes((t.instrument || '').toUpperCase()) && t.trade_date === n.event_date).length
+        : 0;
+      const when = esc(fmtDate(n.event_date)) + (n.event_time ? ' ' + esc(n.event_time) : '');
+      const del = newsCanEdit
+        ? '<button type="button" data-news-del="' + n.id + '" class="ml-auto rounded-lg border border-sell/50 px-2 py-1 text-xs text-sell hover:bg-sell/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent">' + esc(tr('n_del')) + '</button>'
+        : '';
+      return '<article class="rounded-xl border border-line p-4 flex flex-col gap-3">' +
+        '<div class="flex flex-wrap items-center gap-2">' +
+          '<span class="rounded-full bg-surface-2 px-2 py-0.5 text-xs text-muted">' + esc(tr('cat_' + n.category)) + '</span>' +
+          '<span class="rounded-full px-2 py-0.5 text-xs font-semibold ' + impCls + '">' + esc(tr('n_imp_' + n.importance)) + '</span>' +
+          '<span class="ml-auto rounded-full px-2 py-0.5 text-xs font-semibold ' + sentCls + '">' + esc(tr('n_' + n.sentiment)) + '</span>' +
+        '</div>' +
+        '<h2 class="font-bold leading-snug">' + esc(n.title) + '</h2>' +
+        (n.summary ? '<p class="text-sm text-ink-2">' + esc(n.summary) + '</p>' : '') +
+        (n.symbols.length
+          ? '<div class="flex flex-wrap gap-1.5"><span class="text-xs text-muted-2">' + esc(tr('n_syms')) + '</span>' +
+            n.symbols.map(s => '<span class="rounded bg-surface-2 px-1.5 py-0.5 font-mono text-xs">' + esc(s) + '</span>').join('') + '</div>'
+          : '') +
+        '<div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-2">' +
+          '<span>' + when + '</span>' +
+          (related ? '<span>' + esc(tr('n_related', { n: related })) + '</span>' : '') +
+          (n.source_url ? '<a href="' + esc(n.source_url) + '" target="_blank" rel="noopener" class="text-accent hover:underline">' + esc(tr('n_src')) + ' <span aria-hidden="true">&nearr;</span></a>' : '') +
+          del +
+        '</div>' +
+      '</article>';
+    }
+
+    function renderNews() {
+      $('news-editor').classList.toggle('hidden', !newsCanEdit);
+      const loading = newsState === 'loading', error = newsState === 'error';
+      $('news-loading').classList.toggle('hidden', !loading);
+      $('news-error').classList.toggle('hidden', !error);
+      $('news-empty').classList.toggle('hidden', loading || error || news.length > 0);
+      const list = $('news-list');
+      list.classList.toggle('hidden', loading || error);
+      if (loading || error) return;
+      const cat = $('news-category').value, sent = $('news-sentiment').value;
+      const shown = news.filter(n => (cat === 'all' || n.category === cat) && (sent === 'all' || n.sentiment === sent));
+      list.innerHTML = shown.length ? shown.map(newsCard).join('')
+        : '<p class="rounded-xl border border-line p-6 text-center text-sm text-muted md:col-span-2">' + esc(tr('n_none')) + '</p>';
+    }
+
+    async function loadNews() {
+      newsState = 'loading';
+      renderNews();
+      try {
+        const res = await fetch('/api/news', { headers });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        news = data.news || [];
+        newsCanEdit = !!data.canEdit;
+        newsState = 'ok';
+      } catch (err) {
+        console.warn('load news failed', err.message);
+        newsState = 'error';
+      }
+      renderNews();
+      // Refresh the journal rows so the news marker appears once news is in
+      // (skipped while the trade list is still loading: loadTrades renders it).
+      if (listState === 'list' || listState === 'empty') renderList();
+    }
+
+    $('news-category').addEventListener('change', renderNews);
+    $('news-sentiment').addEventListener('change', renderNews);
+    $('news-retry-btn').addEventListener('click', loadNews);
+
+    $('news-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (newsBusy || !newsCanEdit) return;
+      const fd = new FormData(e.target);
+      const payload = {
+        title: fd.get('title'),
+        summary: fd.get('summary'),
+        category: fd.get('category'),
+        sentiment: fd.get('sentiment'),
+        importance: fd.get('importance'),
+        event_date: fd.get('event_date'),
+        event_time: (fd.get('event_time') || '').toString().slice(0, 5),
+        source_url: fd.get('source_url'),
+        symbols: String(fd.get('symbols') || '').split(/[,\s]+/).map(s => s.trim()).filter(Boolean),
+      };
+      newsBusy = true;
+      $('news-save-btn').disabled = true;
+      $('news-form-error').classList.add('hidden');
+      try {
+        const res = await fetch('/api/news', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...headers },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || tr('n_e_save'));
+        e.target.reset();
+        $('news-editor').removeAttribute('open');
+        await loadNews();
+      } catch (err) {
+        $('news-form-error').textContent = terr(err.message) + '. ' + tr('e_retry');
+        $('news-form-error').classList.remove('hidden');
+      } finally {
+        newsBusy = false;
+        $('news-save-btn').disabled = false;
+      }
+    });
+
+    $('news-list').addEventListener('click', async (e) => {
+      const btn = e.target.closest('[data-news-del]');
+      if (!btn || !newsCanEdit || newsBusy) return;
+      newsBusy = true;
+      try {
+        const res = await fetch('/api/news/' + btn.dataset.newsDel, { method: 'DELETE', headers });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data.error || tr('n_e_del'));
+        }
+        await loadNews();
+      } catch (err) {
+        console.warn('delete news failed', err.message);
+        await loadNews();
+      } finally {
+        newsBusy = false;
+      }
+    });
+
     loadTrades();
+    loadNews();
     // Must run after every `let` above is initialised: it calls rerenderAll(),
     // which references the import state.
     initLang();

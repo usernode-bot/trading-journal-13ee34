@@ -143,6 +143,97 @@ app.put('/api/prefs', (req, res) => {
     .catch(() => res.status(500).json({ error: 'Gagal menyimpan preferensi' }));
 });
 
+// ---- Berita pasar -------------------------------------------------------------
+// Shared, admin-curated market news (economic calendar items and headlines)
+// that can move the prices of the listed symbols. Public content: every
+// signed-in user reads it, only the app's admins (dapp.json `admins`) write.
+// Derived numbers (related trades, journal markers) are computed in the
+// frontend from these rows plus the user's trades — never stored here.
+const NEWS_EDITORS = new Set(['ocank14']);
+const NEWS_CATEGORIES = ['ekonomi', 'forex', 'saham', 'kripto'];
+const NEWS_SENTIMENTS = ['bullish', 'bearish', 'netral'];
+const NEWS_IMPORTANCE = ['tinggi', 'sedang', 'rendah'];
+
+const NEWS_COLUMNS = `id, title, summary, category, symbols, sentiment, importance,
+  to_char(event_date, 'YYYY-MM-DD') AS event_date, to_char(event_time, 'HH24:MI') AS event_time,
+  source_url, created_by, created_at`;
+
+function cleanNews(body) {
+  const b = body || {};
+  const n = {};
+  const title = typeof b.title === 'string' ? b.title.trim() : '';
+  if (!title) throw new Error('Judul wajib diisi');
+  n.title = title.slice(0, 200);
+  n.summary = typeof b.summary === 'string' && b.summary.trim() ? b.summary.trim().slice(0, 2000) : null;
+  if (!NEWS_CATEGORIES.includes(b.category)) throw new Error('Kategori tidak valid');
+  n.category = b.category;
+  if (!NEWS_SENTIMENTS.includes(b.sentiment)) throw new Error('Sentimen tidak valid');
+  n.sentiment = b.sentiment;
+  if (!NEWS_IMPORTANCE.includes(b.importance)) throw new Error('Tingkat kepentingan tidak valid');
+  n.importance = b.importance;
+  if (!Array.isArray(b.symbols)) throw new Error('Simbol tidak valid');
+  const symbols = [...new Set(b.symbols.map(s => String(s).trim().toUpperCase()).filter(Boolean))];
+  if (symbols.some(s => s.length > 20)) throw new Error('Simbol tidak valid');
+  if (symbols.length > 10) throw new Error('Maksimal 10 simbol');
+  n.symbols = symbols;
+  if (typeof b.event_date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(b.event_date)) {
+    throw new Error('Tanggal wajib diisi');
+  }
+  n.event_date = b.event_date;
+  const time = b.event_time;
+  if (time === null || time === undefined || time === '') n.event_time = null;
+  else if (typeof time === 'string' && /^\d{2}:\d{2}(:\d{2})?$/.test(time)) n.event_time = time;
+  else throw new Error('Jam tidak valid');
+  const url = typeof b.source_url === 'string' ? b.source_url.trim() : '';
+  if (url && !/^https?:\/\//.test(url)) throw new Error('URL sumber tidak valid');
+  n.source_url = url ? url.slice(0, 500) : null;
+  return n;
+}
+
+app.get('/api/news', async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT ${NEWS_COLUMNS} FROM news_items
+       ORDER BY event_date DESC, event_time DESC NULLS LAST, id DESC LIMIT 100`
+    );
+    res.json({ news: rows, canEdit: NEWS_EDITORS.has(req.user.username) });
+  } catch (err) {
+    console.error('list news failed', err);
+    res.status(500).json({ error: 'Gagal memuat berita' });
+  }
+});
+
+app.post('/api/news', async (req, res) => {
+  if (!NEWS_EDITORS.has(req.user.username)) return res.status(403).json({ error: 'Tidak diizinkan' });
+  let n;
+  try { n = cleanNews(req.body); } catch (err) { return res.status(400).json({ error: err.message }); }
+  try {
+    const { rows } = await pool.query(
+      `INSERT INTO news_items (title, summary, category, symbols, sentiment, importance, event_date, event_time, source_url, created_by)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING ${NEWS_COLUMNS}`,
+      [n.title, n.summary, n.category, n.symbols, n.sentiment, n.importance, n.event_date, n.event_time, n.source_url, req.user.username]
+    );
+    res.status(201).json({ news: rows[0] });
+  } catch (err) {
+    console.error('create news failed', err);
+    res.status(500).json({ error: 'Gagal menyimpan berita' });
+  }
+});
+
+app.delete('/api/news/:id', async (req, res) => {
+  if (!NEWS_EDITORS.has(req.user.username)) return res.status(403).json({ error: 'Tidak diizinkan' });
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) return res.status(404).json({ error: 'Berita tidak ditemukan' });
+  try {
+    const { rowCount } = await pool.query('DELETE FROM news_items WHERE id = $1', [id]);
+    if (!rowCount) return res.status(404).json({ error: 'Berita tidak ditemukan' });
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('delete news failed', err);
+    res.status(500).json({ error: 'Gagal menghapus berita' });
+  }
+});
+
 // ---- Trades -----------------------------------------------------------------
 // Every field except date and instrument is optional, so a quick entry can be
 // completed later. Derived numbers (risk %, R, RR, discipline) are computed in
@@ -484,6 +575,43 @@ async function start() {
       updated_at TIMESTAMPTZ DEFAULT NOW()
     )
   `);
+
+  // Shared market news (admin-curated). Public: content is the same for
+  // every user and carries no personal data, so staging copies the rows and
+  // preview seeds below just top it up.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS news_items (
+      id SERIAL PRIMARY KEY,
+      title VARCHAR(200) NOT NULL,
+      summary TEXT,
+      category VARCHAR(20),
+      symbols TEXT[] NOT NULL DEFAULT '{}',
+      sentiment VARCHAR(10),
+      importance VARCHAR(10),
+      event_date DATE NOT NULL DEFAULT CURRENT_DATE,
+      event_time TIME,
+      source_url TEXT,
+      created_by VARCHAR(255),
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      updated_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+  await pool.query(`CREATE INDEX IF NOT EXISTS news_items_event_date_idx ON news_items (event_date DESC)`);
+
+  if (IS_STAGING) {
+    // Demo news for staging previews: obviously fake, fixed ids, idempotent.
+    // Row 900003 matches the demo BBCA trade (2026-09-30) so the journal's
+    // news marker is visible without extra seeding.
+    await pool.query(`
+      INSERT INTO news_items (id, title, summary, category, symbols, sentiment, importance, event_date, event_time, source_url, created_by)
+      VALUES
+        (900001, 'Staging demo: NFP AS melebihi perkiraan', 'Staging demo: rilis ketenagakerjaan AS di atas perkiraan pasar, dolar menguat.', 'ekonomi', '{EURUSD,XAUUSD}', 'bearish', 'tinggi', '2026-09-29', '20:30', NULL, 'staging-demo-user'),
+        (900002, 'Staging demo: The Fed tahan suku bunga', 'Staging demo: bank sentris AS menahan suku bunga pada level saat ini.', 'ekonomi', '{EURUSD}', 'bullish', 'sedang', '2026-09-30', '02:00', NULL, 'staging-demo-user'),
+        (900003, 'Staging demo: BBCA laba kuartal naik', 'Staging demo: laba kuartalan BBCA naik dibanding tahun lalu.', 'saham', '{BBCA}', 'bullish', 'tinggi', '2026-09-30', NULL, NULL, 'staging-demo-user'),
+        (900004, 'Staging demo: bitcoin koreksi pasca rilis CPI', 'Staging demo: harga bitcoin turun setelah rilis inflasi AS lebih tinggi dari perkiraan.', 'kripto', '{BTCUSDT}', 'bearish', 'sedang', '2026-10-01', NULL, NULL, 'staging-demo-user')
+      ON CONFLICT (id) DO NOTHING
+    `);
+  }
 
   server = app.listen(port, () => console.log(`Listening on :${port}`));
   // Let Envoy retire idle upstream connections at 60s, with a 15s margin.
