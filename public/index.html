@@ -139,8 +139,16 @@
         <div class="flex flex-wrap items-center justify-end gap-2">
           <button type="button" id="export-btn" data-i18n="l_export" class="hidden rounded-lg border border-line-2 px-4 py-2 text-sm text-ink hover:bg-surface-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent">Ekspor CSV</button>
           <button type="button" id="import-btn" data-i18n="l_import" class="rounded-lg border border-line-2 px-4 py-2 text-sm text-ink hover:bg-surface-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent">Impor CSV</button>
+          <button type="button" id="accounts-btn" data-i18n="acc_btn" class="rounded-lg border border-line-2 px-4 py-2 text-sm text-ink hover:bg-surface-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent">Akun</button>
+          <button type="button" id="quick-btn" data-i18n="l_quick" class="rounded-lg border border-accent px-4 py-2 text-sm font-semibold text-accent hover:bg-accent/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent">Catat cepat</button>
           <button type="button" id="new-trade-btn" data-i18n="l_new" class="rounded-lg bg-accent hover:bg-accent-hover px-4 py-2 text-sm font-semibold text-on-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent">Catat trade</button>
         </div>
+      </div>
+      <!-- Peringatan batas rugi harian: muncul saat rugi hari ini melewati
+           batas salah satu akun (lihat Akun & batas risiko). -->
+      <div id="limit-banner" class="hidden rounded-xl border border-sell/40 bg-sell/10 p-4 text-sm" role="alert">
+        <p id="limit-banner-text" class="font-semibold text-sell"></p>
+        <p data-i18n="lim_stop" class="mt-1 text-xs text-sell">Sebaiknya berhenti trading hari ini.</p>
       </div>
       <p id="demo-note" data-i18n="l_demo_note" class="hidden px-1 text-sm text-warn">Contoh data staging. Trade ini tidak tersimpan dan tidak bisa diubah.</p>
       <p id="import-note" class="hidden px-1 text-sm text-buy" role="status"></p>
@@ -169,6 +177,52 @@
           <div><dt data-i18n="s_maxdd" class="text-xs text-muted-2">Max drawdown</dt><dd id="sum-dd" class="font-mono text-lg">-</dd><dd id="sum-dd-sub" class="text-xs text-muted-2"></dd></div>
         </dl>
         <p id="sum-excluded" class="hidden text-xs text-muted-2"></p>
+
+        <!-- Analisis lanjutan: profit factor, ekspektansi, Sharpe/Sortino
+             (perkiraan dari data journal, per trade) dan streak. -->
+        <div id="adv-section" class="hidden flex flex-col gap-2">
+          <h3 data-i18n="s_adv" class="text-xs font-semibold text-muted">Analisis lanjutan</h3>
+          <dl class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-3">
+            <div><dt data-i18n="s_pf" class="text-xs text-muted-2">Profit factor</dt><dd id="sum-pf" class="font-mono text-lg">-</dd><dd id="sum-pf-sub" class="text-xs text-muted-2"></dd></div>
+            <div><dt data-i18n="s_exp" class="text-xs text-muted-2">Ekspektansi per trade</dt><dd id="sum-exp" class="font-mono text-lg">-</dd><dd id="sum-exp-sub" class="text-xs text-muted-2"></dd></div>
+            <div><dt data-i18n="s_sharpe" class="text-xs text-muted-2">Sharpe (perkiraan)</dt><dd id="sum-sharpe" class="font-mono text-lg">-</dd><dd id="sum-sharpe-sub" class="text-xs text-muted-2"></dd></div>
+            <div><dt data-i18n="s_sortino" class="text-xs text-muted-2">Sortino (perkiraan)</dt><dd id="sum-sortino" class="font-mono text-lg">-</dd><dd id="sum-sortino-sub" class="text-xs text-muted-2"></dd></div>
+            <div><dt data-i18n="s_stw" class="text-xs text-muted-2">Streak menang terpanjang</dt><dd id="sum-stw" class="font-mono text-lg">-</dd></div>
+            <div><dt data-i18n="s_stl" class="text-xs text-muted-2">Streak rugi terpanjang</dt><dd id="sum-stl" class="font-mono text-lg">-</dd></div>
+            <div><dt data-i18n="s_stnow" class="text-xs text-muted-2">Streak saat ini</dt><dd id="sum-stnow" class="font-mono text-lg">-</dd></div>
+          </dl>
+          <p data-i18n="s_adv_note" class="text-xs text-muted-2">Profit factor, Sharpe dan Sortino dihitung per trade dari data jurnalmu, bukan janji profit.</p>
+        </div>
+
+        <!-- Kalendar P/L harian: satu bulan per tampilan, sel hari diwarnai
+             hijau (profit) / jingga (rugi), makin pekat makin besar. -->
+        <div id="cal-section" class="flex flex-col gap-2">
+          <div class="flex items-center justify-between gap-2">
+            <h3 data-i18n="s_cal" class="text-xs font-semibold text-muted">Kalendar P/L harian</h3>
+            <div class="flex items-center gap-1">
+              <button type="button" id="cal-prev" data-i18n-aria="cal_prev" aria-label="Bulan sebelumnya" class="rounded-lg px-2 py-1 text-sm text-ink hover:bg-surface-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"><span aria-hidden="true">&larr;</span></button>
+              <span id="cal-label" class="min-w-32 text-center text-sm font-semibold"></span>
+              <button type="button" id="cal-next" data-i18n-aria="cal_next" aria-label="Bulan berikutnya" class="rounded-lg px-2 py-1 text-sm text-ink hover:bg-surface-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"><span aria-hidden="true">&rarr;</span></button>
+            </div>
+          </div>
+          <div id="cal-weekdays" class="grid grid-cols-7 gap-0.5 text-center text-xs text-muted-2"></div>
+          <div id="cal-grid" class="grid grid-cols-7 gap-0.5"></div>
+          <p id="cal-note" class="text-xs text-muted-2"></p>
+          <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-2">
+            <span class="inline-flex items-center gap-1"><span class="h-3 w-3 rounded bg-buy/40" aria-hidden="true"></span><span data-i18n="cal_profit">Profit</span></span>
+            <span class="inline-flex items-center gap-1"><span class="h-3 w-3 rounded bg-sell/40" aria-hidden="true"></span><span data-i18n="cal_loss">Rugi</span></span>
+            <span class="inline-flex items-center gap-1"><span class="h-3 w-3 rounded bg-surface-2" aria-hidden="true"></span><span data-i18n="cal_no">Tidak ada trade</span></span>
+            <span data-i18n="cal_more">Warna lebih pekat = P/L hari itu lebih besar.</span>
+          </div>
+        </div>
+
+        <!-- Breakdown: sesi, instrumen, setup. Pasar/kategori memakai tabel
+             performa per kategori di bawah. -->
+        <div id="break-section" class="hidden flex flex-col gap-4">
+          <h3 data-i18n="s_break" class="text-xs font-semibold text-muted">Breakdown performa</h3>
+          <div id="break-tables" class="flex flex-col gap-4"></div>
+          <p data-i18n="bk_note" class="text-xs text-muted-2"></p>
+        </div>
 
         <div class="flex flex-col gap-2">
           <h3 class="text-xs font-semibold text-muted">Grafik profit/loss</h3>
@@ -209,7 +263,7 @@
             <label class="flex flex-col gap-1 text-sm"><span class="text-ink-2" data-i18n="k_capital">Modal ($)</span>
               <input id="calc-capital" type="text" inputmode="decimal" placeholder="100" class="field"></label>
             <label class="flex flex-col gap-1 text-sm"><span class="text-ink-2" data-i18n="k_risk_pct">Risiko (%)</span>
-              <input id="calc-risk-pct" type="text" inputmode="decimal" value="1" class="field"></label>
+              <input id="lc-risk-pct" type="text" inputmode="decimal" value="1" class="field"></label>
             <label class="flex flex-col gap-1 text-sm"><span class="text-ink-2" data-i18n="k_sl">Jarak SL (pip/poin)</span>
               <input id="calc-sl-dist" type="text" inputmode="decimal" placeholder="20" class="field"></label>
             <label class="flex flex-col gap-1 text-sm"><span class="text-ink-2" data-i18n="k_pipv">Nilai per pip untuk 1 lot ($)</span>
@@ -321,10 +375,27 @@
               <input name="lot_size" type="text" inputmode="decimal" class="field num"></label>
             <label class="flex flex-col gap-1 text-sm"><span class="text-ink-2" data-i18n="f_cap">Modal saat ini ($)</span>
               <input name="capital" type="text" inputmode="decimal" class="field num"></label>
+            <label class="flex flex-col gap-1 text-sm"><span class="text-ink-2" data-i18n="f_account">Akun</span>
+              <select name="account_id" class="field">
+                <option value="" data-i18n="acc_pick">Tanpa akun</option>
+              </select></label>
           </div>
           <label class="flex flex-col gap-1 text-sm"><span class="text-ink-2" data-i18n="k_risk">Risiko ($)</span>
             <input name="risk_amount" type="text" inputmode="decimal" data-i18n-ph="f_risk_ph" placeholder="Kosongkan untuk dihitung otomatis" class="field num">
             <span data-i18n="f_risk_help" class="text-xs text-muted-2">Otomatis: |Entry - SL| x lot x ukuran kontrak (forex 100.000, saham 100 lembar, kripto 1). Hanya perkiraan; isi sendiri jika berbeda.</span></label>
+        </fieldset>
+
+        <!-- Cek pra-entry: ritual sebelum entry, ikut tersimpan di trade -->
+        <fieldset class="flex flex-col gap-3">
+          <legend data-i18n="leg_check" class="mb-2 text-sm font-semibold text-muted">Cek pra-entry</legend>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <label class="choice"><input type="checkbox" name="checklist" value="setup"> <span data-i18n="ck_setup">Setup sudah terbaca dan masuk plan</span></label>
+            <label class="choice"><input type="checkbox" name="checklist" value="risk"> <span data-i18n="ck_risk">Risiko maksimal 1% modal</span></label>
+            <label class="choice"><input type="checkbox" name="checklist" value="rr"> <span data-i18n="ck_rr">RR rencana minimal 1:2</span></label>
+            <label class="choice"><input type="checkbox" name="checklist" value="sl"> <span data-i18n="ck_sl">SL sudah terpasang di broker</span></label>
+            <label class="choice"><input type="checkbox" name="checklist" value="day"> <span data-i18n="ck_day">Batas rugi harian masih aman</span></label>
+          </div>
+          <p data-i18n="ck_note" class="text-xs text-muted-2">Checklist diisi sebelum entry dan tersimpan di trade ini.</p>
         </fieldset>
 
         <fieldset class="flex flex-col gap-3">
@@ -337,6 +408,25 @@
           </div>
           <label class="flex flex-col gap-1 text-sm"><span class="text-ink-2" data-i18n="f_reason">Alasan entry</span>
             <textarea name="entry_reason" rows="3" maxlength="2000" class="field"></textarea></label>
+          <!-- Screenshot chart: file diunggah ke penyimpanan platform lewat
+               bridge (hanya URL-nya yang disimpan di trade), atau ditempel
+               sebagai URL bila upload tidak tersedia. -->
+          <div class="flex flex-col gap-1 text-sm">
+            <span class="text-ink-2" data-i18n="f_shot">Screenshot chart</span>
+            <input type="hidden" name="screenshot_url">
+            <input type="hidden" name="screenshot_id">
+            <div class="flex flex-wrap items-center gap-2">
+              <label class="choice w-auto cursor-pointer justify-center focus-within:ring-2 focus-within:ring-accent">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg>
+                <span data-i18n="f_shot_pick">Pilih file</span>
+                <input id="shot-input" type="file" accept="image/png,image/jpeg,image/webp,image/gif" class="sr-only">
+              </label>
+              <button type="button" id="shot-remove" data-i18n="f_shot_remove" class="hidden rounded-lg border border-line-2 px-3 py-2 text-sm text-ink hover:bg-surface-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent">Hapus gambar</button>
+            </div>
+            <img id="shot-preview" alt="" class="hidden max-h-48 w-auto rounded-lg border border-line">
+            <input id="shot-url" type="url" maxlength="500" data-i18n-ph="f_shot_ph" placeholder="atau tempel URL gambar" class="field">
+            <p id="shot-status" class="hidden text-xs text-warn" role="status"></p>
+          </div>
         </fieldset>
 
         <fieldset class="flex flex-col gap-3">
@@ -393,7 +483,19 @@
             <div><dt data-i18n="h_prr" class="text-muted-2">RR rencana</dt><dd id="calc-planned-rr" class="font-mono">-</dd></div>
             <div><dt data-i18n="h_arr" class="text-muted-2">RR aktual</dt><dd id="calc-actual-rr" class="font-mono">-</dd></div>
           </dl>
+          <!-- Saran ukuran posisi: kebalikan dari hitungan risiko, dari
+               modal dan persentase risiko (batas pasar akun bila ada,
+               selain itu 1%) -->
+          <div id="calc-sug-box" class="hidden flex flex-wrap items-center justify-between gap-3 border-t border-line pt-3">
+            <div class="flex flex-col gap-0.5">
+              <span class="text-xs text-muted-2" data-i18n="ac_suglot">Saran lot</span>
+              <span id="calc-sug" class="font-mono text-lg">-</span>
+              <span id="calc-sug-sub" class="text-xs text-muted-2"></span>
+            </div>
+            <button type="button" id="apply-lot-btn" data-i18n="ac_apply" class="rounded-lg border border-line-2 px-3 py-1.5 text-sm font-semibold text-accent hover:bg-surface-2 disabled:opacity-60 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent">Isi ke lot</button>
+          </div>
           <p id="calc-violations" class="text-sm text-sell"></p>
+          <p id="form-mkt-warn" class="hidden text-xs text-warn" role="alert"></p>
         </div>
 
         <p id="form-error" class="hidden text-sm text-sell" role="alert"></p>
@@ -401,6 +503,42 @@
         <div class="flex flex-col-reverse sm:flex-row sm:justify-between gap-3">
           <button type="button" id="delete-btn" data-i18n="f_delete" class="hidden rounded-lg border border-sell/50 px-4 py-2 text-sm text-sell hover:bg-sell/10">Hapus trade</button>
           <button type="submit" id="save-btn" class="sm:ml-auto rounded-lg bg-accent hover:bg-accent-hover px-5 py-2.5 text-sm font-semibold text-on-accent disabled:opacity-60 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent">Simpan trade</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Catat cepat: form minimal (instrumen, posisi, entry, SL, TP, lot).
+         Tanggal otomatis hari ini; detail lain diisi lewat ubah trade. -->
+    <section id="quick-view" class="hidden w-full max-w-2xl mx-auto flex flex-col gap-4">
+      <div class="flex items-center gap-3 px-1">
+        <button type="button" id="quick-back-btn" class="rounded-lg px-2 py-1 text-sm text-accent hover:bg-surface-2"><span aria-hidden="true">&larr;</span> <span data-i18n="f_back">Kembali</span></button>
+        <h1 data-i18n="q_title" class="text-xl font-bold">Catat cepat</h1>
+      </div>
+      <p data-i18n="q_note" class="px-1 text-sm text-muted">Cukup yang wajib, tanggal otomatis hari ini. Sisanya diisi lewat ubah trade.</p>
+      <form id="quick-form" novalidate class="flex flex-col gap-4">
+        <label class="flex flex-col gap-1 text-sm"><span class="text-ink-2" data-i18n="h_instr">Instrumen</span>
+          <input name="instrument" type="text" required maxlength="40" autocapitalize="characters" list="instrument-pairs" placeholder="EURUSD, BBCA, BTC" class="field"></label>
+        <div class="flex flex-col gap-1 text-sm">
+          <span class="text-ink-2" data-i18n="h_pos">Posisi</span>
+          <div class="grid grid-cols-2 gap-2">
+            <label class="choice justify-center"><input type="radio" name="position" value="buy"> <span data-i18n="pos_buy">Buy</span></label>
+            <label class="choice justify-center"><input type="radio" name="position" value="sell"> <span data-i18n="pos_sell">Sell</span></label>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <label class="flex flex-col gap-1 text-sm"><span class="text-ink-2" data-i18n="h_entry">Entry</span>
+            <input name="entry_price" type="text" inputmode="decimal" class="field num"></label>
+          <label class="flex flex-col gap-1 text-sm"><span class="text-ink-2" data-i18n="f_sl">Stop loss (SL)</span>
+            <input name="stop_loss" type="text" inputmode="decimal" class="field num"></label>
+          <label class="flex flex-col gap-1 text-sm"><span class="text-ink-2" data-i18n="f_tp">Take profit (TP)</span>
+            <input name="take_profit" type="text" inputmode="decimal" class="field num"></label>
+          <label class="flex flex-col gap-1 text-sm"><span class="text-ink-2" data-i18n="f_lot">Lot / ukuran posisi</span>
+            <input name="lot_size" type="text" inputmode="decimal" class="field num"></label>
+        </div>
+        <p id="quick-error" class="hidden text-sm text-sell" role="alert"></p>
+        <div class="flex flex-col-reverse sm:flex-row gap-3">
+          <button type="button" id="quick-full-btn" data-i18n="q_full" class="rounded-lg border border-line-2 px-4 py-2.5 text-sm text-ink hover:bg-surface-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent">Lanjut ke form lengkap</button>
+          <button type="submit" id="quick-save-btn" data-i18n="f_save_new" class="sm:ml-auto rounded-lg bg-accent hover:bg-accent-hover px-5 py-2.5 text-sm font-semibold text-on-accent disabled:opacity-60 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent">Simpan trade</button>
         </div>
       </form>
     </section>
@@ -491,6 +629,44 @@
       <div class="flex sm:justify-end">
         <button type="button" id="copy-csv-btn" class="w-full sm:w-auto rounded-lg bg-accent hover:bg-accent-hover px-5 py-2.5 text-sm font-semibold text-on-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent">Salin CSV</button>
       </div>
+    </section>
+
+    <!-- Akun & batas risiko: beberapa akun trading, masing-masing dengan
+         saldo awal, batas rugi harian dan batas risiko per pasar. -->
+    <section id="accounts-view" class="hidden w-full max-w-2xl mx-auto flex flex-col gap-4">
+      <div class="flex items-center gap-3 px-1">
+        <button type="button" id="accounts-back-btn" class="rounded-lg px-2 py-1 text-sm text-accent hover:bg-surface-2"><span aria-hidden="true">&larr;</span> <span data-i18n="f_back">Kembali</span></button>
+        <h1 data-i18n="acc_title" class="text-xl font-bold">Akun &amp; batas risiko</h1>
+      </div>
+      <p data-i18n="acc_hint" class="px-1 text-sm text-muted">Batas rugi harian memunculkan peringatan di Jurnal saat rugi hari ini melewati batasnya.</p>
+      <div id="accounts-list" class="flex flex-col gap-3"></div>
+      <form id="account-form" novalidate class="flex flex-col gap-3 rounded-xl border border-line p-4">
+        <h2 id="account-form-title" data-i18n="acc_add" class="text-sm font-semibold text-muted">Tambah akun</h2>
+        <p id="account-error" class="hidden text-sm text-sell" role="alert"></p>
+        <label class="flex flex-col gap-1 text-sm"><span class="text-ink-2" data-i18n="acc_name">Nama akun</span>
+          <input name="name" type="text" maxlength="60" required class="field"></label>
+        <div class="grid grid-cols-2 gap-3">
+          <label class="flex flex-col gap-1 text-sm"><span class="text-ink-2" data-i18n="acc_balance">Saldo awal ($)</span>
+            <input name="starting_balance" type="text" inputmode="decimal" class="field num"></label>
+          <label class="flex flex-col gap-1 text-sm"><span class="text-ink-2" data-i18n="acc_limit">Batas rugi harian ($)</span>
+            <input name="daily_loss_limit" type="text" inputmode="decimal" class="field num"></label>
+        </div>
+        <fieldset class="flex flex-col gap-2">
+          <legend data-i18n="acc_mkt" class="mb-1 text-sm text-ink-2">Batas risiko per pasar (% modal, kosong = tanpa batas)</legend>
+          <div class="grid grid-cols-3 gap-2">
+            <label class="flex flex-col gap-1 text-sm"><span class="text-xs text-muted-2" data-i18n="cat_forex">Forex</span>
+              <input name="mkt_forex" type="text" inputmode="decimal" class="field num"></label>
+            <label class="flex flex-col gap-1 text-sm"><span class="text-xs text-muted-2" data-i18n="cat_saham">Saham</span>
+              <input name="mkt_saham" type="text" inputmode="decimal" class="field num"></label>
+            <label class="flex flex-col gap-1 text-sm"><span class="text-xs text-muted-2" data-i18n="cat_kripto">Kripto</span>
+              <input name="mkt_kripto" type="text" inputmode="decimal" class="field num"></label>
+          </div>
+        </fieldset>
+        <div class="flex flex-col-reverse sm:flex-row gap-3">
+          <button type="button" id="account-cancel-btn" data-i18n="acc_cancel" class="hidden rounded-lg border border-line-2 px-4 py-2.5 text-sm text-ink hover:bg-surface-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent">Batal</button>
+          <button type="submit" id="account-save-btn" data-i18n="acc_save" class="sm:ml-auto rounded-lg bg-accent hover:bg-accent-hover px-5 py-2.5 text-sm font-semibold text-on-accent disabled:opacity-60 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent">Simpan akun</button>
+        </div>
+      </form>
     </section>
     </div>
 
@@ -645,6 +821,9 @@
       'Gagal menyimpan trade': 'e_save',
       'Tidak ada baris untuk diimpor': 'i_no_rows',
       'Trade tidak ditemukan': 'i_not_found',
+      'Nama akun wajib diisi': 'e_acc_name',
+      'Gagal menyimpan akun': 'e_acc_fail',
+      'Gagal menghapus akun': 'e_acc_del',
     };
     function terr(msg) {
       if (msg && SERR[msg]) return tr(SERR[msg]);
@@ -681,6 +860,8 @@
       renderSignals();
       renderPairOptions();
       updateLotCalc();
+      renderAccountOptions();
+      renderAccounts();
       showListState(listState);   // keeps loading/error states intact
       if (listState === 'list' || listState === 'empty') renderList();
       if (!$('form-view').classList.contains('hidden')) {
@@ -849,7 +1030,9 @@
     const $ = (id) => document.getElementById(id);
     const form = $('trade-form');
     let trades = [];
+    let accounts = [];
     let editingId = null;
+    let editingAccountId = null;   // account being edited in the accounts form
     let listState = 'loading';   // last state shown, so a language switch can re-render it
 
     function num(v) {
@@ -985,6 +1168,45 @@
         const r = calc(t).r;
         if (r !== null) { b.totalR += r; b.rCount++; }
       }
+      // Advanced analytics: profit factor, expectancy and Sharpe/Sortino are
+      // per-trade estimates from the journal's own data (never a promise),
+      // plus the longest win/loss streaks and the one in progress.
+      const grossWin = done.reduce((s, t) => s + Math.max(0, num(t.result_amount)), 0);
+      const grossLoss = done.reduce((s, t) => s + Math.max(0, -num(t.result_amount)), 0);
+      const profitFactor = done.length
+        ? (grossLoss === 0 ? (grossWin > 0 ? Infinity : null) : grossWin / grossLoss)
+        : null;
+      const expectancy = done.length ? totalPL / done.length : null;
+      const meanR = rs.length ? totalR / rs.length : null;
+      const stdR = rs.length ? Math.sqrt(rs.reduce((s, r) => s + (r - totalR / rs.length) ** 2, 0) / rs.length) : null;
+      const downR = rs.length ? Math.sqrt(rs.reduce((s, r) => s + Math.min(r, 0) ** 2, 0) / rs.length) : null;
+      const sharpe = meanR !== null && stdR > 0 ? meanR / stdR : null;
+      const sortino = meanR !== null && downR > 0 ? meanR / downR : null;
+      let curW = 0, curL = 0, maxW = 0, maxL = 0;
+      for (const t of ordered) {
+        const res = num(t.result_amount);
+        if (res > 0) { curW++; curL = 0; } else if (res < 0) { curL++; curW = 0; } else continue;
+        maxW = Math.max(maxW, curW); maxL = Math.max(maxL, curL);
+      }
+      const stNow = curW ? { n: curW, win: true } : curL ? { n: curL, win: false } : null;
+      // Buckets for the breakdown tables (session, instrument, setup).
+      const bucketize = (keyFn) => {
+        const map = {};
+        for (const t of all) {
+          const key = keyFn(t);
+          if (key === null || key === '') continue;
+          const b = map[key] || (map[key] = { key, trades: 0, withResult: 0, wins: 0, totalPL: 0, totalR: 0, rCount: 0 });
+          b.trades++;
+          const res = num(t.result_amount);
+          if (res === null) continue;
+          b.withResult++;
+          if (res > 0) b.wins++;
+          b.totalPL += res;
+          const r = calc(t).r;
+          if (r !== null) { b.totalR += r; b.rCount++; }
+        }
+        return map;
+      };
       return {
         total: all.length,
         withResult: done.length,
@@ -993,6 +1215,9 @@
         plannedRRCount: rrs.length,
         equity,
         byCategory,
+        bySession: bucketize(t => sessionOf(t.entry_time)),
+        byInstrument: bucketize(t => t.instrument ? String(t.instrument).toUpperCase() : null),
+        bySetup: bucketize(t => String(t.setup || '').trim()),
         excluded: all.length - done.length,
         wins,
         winRate: done.length ? wins / done.length * 100 : null,
@@ -1001,8 +1226,20 @@
         rCount: rs.length,
         maxDd: done.length ? maxDd : null,
         ddPct: done.length && maxDd === 0 && startCapital !== null ? 0 : ddPct,
+        profitFactor, expectancy, sharpe, sortino,
+        stw: maxW, stl: maxL, stNow,
       };
     }
+
+    // Trading session from the entry hour (device time), for the breakdown.
+    function sessionOf(entryTime) {
+      const h = Number(String(entryTime || '').slice(0, 2));
+      if (!Number.isFinite(h) || String(entryTime || '').length < 5) return null;
+      if (h >= 7 && h <= 13) return 'asia';
+      if (h >= 14 && h <= 20) return 'london';
+      return 'ny';   // 21:00 to 04:59
+    }
+    const SESSION_KEYS = { asia: 'ses_asia', london: 'ses_london', ny: 'ses_ny' };
 
     let pnlReady = false;   // at least one closed trade: the PNL card has numbers to show
 
@@ -1028,8 +1265,142 @@
       $('sum-pl').className = 'font-mono text-lg ' + resultClass(s.totalPL);
       $('sum-avg-rr').textContent = fmtRR(s.avgPlannedRR);
       $('sum-rr-sub').textContent = s.plannedRRCount ? tr('s_rr_sub', { n: s.plannedRRCount }) : '';
+      renderAdvanced(s);
+      renderCalendar();
+      renderBreakdowns(s);
       renderEquityChart(s.equity, s.total);
       renderCategoryTable(s.byCategory);
+      updateDailyLimit();
+    }
+
+    // Profit factor, expectancy, Sharpe/Sortino (all per-trade estimates) and
+    // the win/loss streaks. Hidden entirely until one trade has a result.
+    function renderAdvanced(s) {
+      $('adv-section').classList.toggle('hidden', !s.withResult);
+      $('sum-pf').textContent = s.profitFactor === null ? '-'
+        : s.profitFactor === Infinity ? '∞' : fmtNum(s.profitFactor, 2);
+      $('sum-pf-sub').textContent = s.profitFactor === null ? '' : tr('s_pf_sub');
+      $('sum-exp').textContent = fmtMoney(s.expectancy);
+      $('sum-exp-sub').textContent = s.expectancy === null ? '' : tr('s_exp_sub');
+      $('sum-sharpe').textContent = s.sharpe === null ? '-' : fmtNum(s.sharpe, 2);
+      $('sum-sharpe-sub').textContent = s.sharpe === null ? '' : tr('s_sharpe_sub');
+      $('sum-sortino').textContent = s.sortino === null ? '-' : fmtNum(s.sortino, 2);
+      $('sum-sortino-sub').textContent = s.sortino === null ? '' : tr('s_sortino_sub');
+      $('sum-stw').textContent = s.withResult ? String(s.stw) : '-';
+      $('sum-stl').textContent = s.withResult ? String(s.stl) : '-';
+      $('sum-stnow').textContent = !s.stNow ? '-' : tr(s.stNow.win ? 's_stnow_w' : 's_stnow_l', { n: s.stNow.n });
+    }
+
+    // One month of daily P/L as a grid of squares, green for profit days and
+    // orange for loss days, in three intensity steps by size (diverging
+    // encoding; whole-literal Tailwind classes so the precompiled build
+    // keeps them). Navigable one month at a time.
+    let calOffset = 0;   // 0 = this month, negative = further back
+    // Whole literals so Tailwind's extractor sees every step (see UI note above).
+    const CAL_CLASS = {
+      b70: 'bg-buy/70', b40: 'bg-buy/40', b20: 'bg-buy/20',
+      s70: 'bg-sell/70', s40: 'bg-sell/40', s20: 'bg-sell/20',
+    };
+    function calColor(v, maxAbs) {
+      const a = maxAbs > 0 ? Math.abs(v) / maxAbs : 0;
+      const step = a >= 0.66 ? '70' : a >= 0.33 ? '40' : '20';
+      return CAL_CLASS[(v > 0 ? 'b' : 's') + step];
+    }
+    function renderCalendar() {
+      const grid = $('cal-grid'), label = $('cal-label'), note = $('cal-note'), wd = $('cal-weekdays');
+      // Sum of closed results per calendar day.
+      const daily = {};
+      for (const t of trades) {
+        const res = num(t.result_amount);
+        if (res === null || !t.trade_date) continue;
+        daily[t.trade_date] = (daily[t.trade_date] || 0) + res;
+      }
+      const base = new Date();
+      const view = new Date(base.getFullYear(), base.getMonth() + calOffset, 1);
+      label.textContent = view.toLocaleDateString(locale(), { month: 'long', year: 'numeric' });
+      // Weekday header, Monday first, localized per language (2026-09-07 is
+      // a known Monday).
+      wd.innerHTML = Array.from({ length: 7 }, (_, i) =>
+        '<span class="py-1">' + esc(new Date(2026, 8, 7 + i).toLocaleDateString(locale(), { weekday: 'short' })) + '</span>').join('');
+      const daysIn = new Date(view.getFullYear(), view.getMonth() + 1, 0).getDate();
+      const lead = (view.getDay() + 6) % 7;
+      const maxAbs = Math.max(0, ...Object.values(daily).map(v => Math.abs(v)));
+      const cells = [];
+      for (let i = 0; i < lead; i++) cells.push('<span aria-hidden="true"></span>');
+      let traded = 0, monthPL = 0;
+      for (let d = 1; d <= daysIn; d++) {
+        const key = view.getFullYear() + '-' + String(view.getMonth() + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+        const v = Object.prototype.hasOwnProperty.call(daily, key) ? daily[key] : null;
+        if (v !== null) { traded++; monthPL += v; }
+        const cls = v === null ? 'border border-line'
+          : v === 0 ? 'bg-surface-2'
+          : calColor(v, maxAbs);
+        const title = v === null ? '' : ' title="' + esc(fmtDate(key) + ': ' + fmtMoney(v)) + '"';
+        cells.push('<div class="flex aspect-square items-center justify-center rounded text-xs text-ink-2 ' + cls + '"' + title + '>' + d + '</div>');
+      }
+      grid.innerHTML = cells.join('');
+      note.textContent = traded
+        ? tr('cal_month_pl', { n: fmtMoney(monthPL) })
+        : tr('cal_none');
+    }
+    $('cal-prev').addEventListener('click', () => { calOffset--; renderCalendar(); });
+    $('cal-next').addEventListener('click', () => { calOffset = Math.min(0, calOffset + 1); renderCalendar(); });
+
+    // Breakdown tables: session, instrument and setup. Same columns as the
+    // per-category table; market/category already has its own table.
+    const BREAK_KEYS = { asia: 'ses_asia', london: 'ses_london', ny: 'ses_ny' };
+    function breakRows(byMap) {
+      return Object.values(byMap)
+        .sort((a, b) => b.trades - a.trades || b.withResult - a.withResult);
+    }
+    function breakTable(titleKey, rows, labelFn) {
+      if (!rows.length) return '';
+      const tr2 = (b) => {
+        const wr = b.withResult ? b.wins / b.withResult * 100 : null;
+        const pl = b.withResult ? b.totalPL : null;
+        const r = b.rCount ? b.totalR : null;
+        return '<tr>' +
+          '<td class="px-3 py-2 whitespace-nowrap font-semibold">' + esc(labelFn(b.key)) + '</td>' +
+          '<td class="px-3 py-2 text-right font-mono">' + b.trades + '</td>' +
+          '<td class="px-3 py-2 text-right font-mono whitespace-nowrap">' + fmtPct(wr) + '</td>' +
+          '<td class="px-3 py-2 text-right font-mono whitespace-nowrap ' + resultClass(pl) + '">' + fmtMoney(pl) + '</td>' +
+          '<td class="px-3 py-2 text-right font-mono">' + fmtR(r) + '</td>' +
+        '</tr>';
+      };
+      const head = '<div class="overflow-x-auto rounded-lg border border-line"><table class="min-w-full text-sm">' +
+        '<thead class="bg-surface text-left text-xs text-muted"><tr>' +
+          '<th class="px-3 py-2 font-medium">' + esc(tr('c_cat')) + '</th>' +
+          '<th class="px-3 py-2 font-medium text-right">' + esc(tr('c_trades')) + '</th>' +
+          '<th class="px-3 py-2 font-medium text-right">' + esc(tr('s_winrate')) + '</th>' +
+          '<th class="px-3 py-2 font-medium text-right">' + esc(tr('c_pl')) + '</th>' +
+          '<th class="px-3 py-2 font-medium text-right">' + esc(tr('c_r')) + '</th>' +
+        '</tr></thead><tbody class="divide-y divide-line">' + rows.map(tr2).join('') + '</tbody></table></div>';
+      return '<div class="flex flex-col gap-2"><h4 class="text-xs font-semibold text-muted">' + esc(tr(titleKey)) + '</h4>' + head + '</div>';
+    }
+    function renderBreakdowns(s) {
+      const section = $('break-section');
+      const parts = [];
+      const ses = breakRows(s.bySession);
+      if (ses.length) parts.push(breakTable('bk_session', ses, k => tr(BREAK_KEYS[k] || k)));
+      const instr = breakRows(s.byInstrument);
+      if (instr.length > 1 || (instr.length === 1 && instr[0].key)) {
+        // Keep the eight busiest instruments and fold the rest into "Other".
+        const top = instr.slice(0, 8);
+        const rest = instr.slice(8);
+        if (rest.length) {
+          const other = rest.reduce((o, b) => {
+            o.trades += b.trades; o.withResult += b.withResult; o.wins += b.wins;
+            o.totalPL += b.totalPL; o.totalR += b.totalR; o.rCount += b.rCount;
+            return o;
+          }, { key: 'other', trades: 0, withResult: 0, wins: 0, totalPL: 0, totalR: 0, rCount: 0 });
+          top.push(other);
+        }
+        parts.push(breakTable('bk_instr', top, k => k === 'other' ? tr('bk_other') : k));
+      }
+      const setups = breakRows(s.bySetup);
+      if (setups.length) parts.push(breakTable('bk_setup', setups, k => k ? k : tr('bk_none')));
+      section.classList.toggle('hidden', !parts.length);
+      $('break-tables').innerHTML = parts.length ? parts.join('') : '<p class="text-sm text-muted">' + esc(tr('bk_empty')) + '</p>';
     }
 
     // Cumulative P/L over trade date as one inline SVG line starting at $0,
@@ -1195,11 +1566,17 @@
       const fp = fd.get('followed_plan');
       t.followed_plan = fp === 'true' ? true : fp === 'false' ? false : null;
       t.mistakes = fd.getAll('mistakes');
+      const acc = (fd.get('account_id') || '').toString();
+      t.account_id = acc ? Number(acc) : null;
+      t.checklist = fd.getAll('checklist');
+      t.screenshot_url = (fd.get('screenshot_url') || '').toString().trim();
+      t.screenshot_id = (fd.get('screenshot_id') || '').toString();
       return t;
     }
 
     function fillForm(t) {
       form.reset();
+      setShot('', '');
       const set = (name, v) => { form.elements[name].value = v === null || v === undefined ? '' : v; };
       for (const k of ['trade_date', 'entry_time', 'exit_time', 'instrument', 'category', 'setup', 'timeframe', 'entry_reason', 'emotion', 'lesson']) set(k, t[k]);
       for (const k of NUMERIC_FIELDS) { const n = num(t[k]); set(k, n === null ? '' : String(n)); }
@@ -1207,6 +1584,10 @@
       set('followed_plan', t.followed_plan === true ? 'true' : t.followed_plan === false ? 'false' : '');
       const ms = t.mistakes || [];
       for (const c of form.querySelectorAll('input[name="mistakes"]')) c.checked = ms.includes(c.value);
+      const cks = t.checklist || [];
+      for (const c of form.querySelectorAll('input[name="checklist"]')) c.checked = cks.includes(c.value);
+      set('account_id', t.account_id === null || t.account_id === undefined ? '' : String(t.account_id));
+      setShot(t.screenshot_url || '', t.screenshot_id || '');
     }
 
     function updateCalc() {
@@ -1219,23 +1600,60 @@
       $('calc-actual-rr').textContent = fmtRR(c.actualRR);
       $('calc-badge').innerHTML = badge(c);
       $('calc-violations').textContent = c.violations.join('. ');
+      // Suggested position size: the inverse of the risk estimate, from the
+      // capital field and a risk % (the account's market limit for this
+      // category when set, otherwise the 1% discipline rule).
+      const cap = num(t.capital);
+      const acc = accounts.find(a => String(a.id) === String(t.account_id));
+      const accPct = acc && t.category && acc.market_limits ? num(acc.market_limits[t.category]) : null;
+      const pct = accPct !== null && accPct > 0 ? accPct : 1;
+      const entry = num(t.entry_price), sl = num(t.stop_loss);
+      const slDist = entry !== null && sl !== null && entry !== sl ? Math.abs(entry - sl) : null;
+      const pair = findPair(t.instrument);
+      const contract = CONTRACT_SIZE[t.category] && (pair && pair.contract || CONTRACT_SIZE[t.category]);
+      const riskUsd = cap !== null && cap > 0 ? cap * pct / 100 : null;
+      const sugLot = riskUsd !== null && slDist > 0 && contract ? riskUsd / (slDist * contract) : null;
+      // Round down: forex and metals to 0.01, crypto to 0.0001, stock to 1.
+      const dp = t.category === 'kripto' ? 4 : t.category === 'saham' ? 0 : 2;
+      const lotFloor = sugLot !== null ? Math.floor(sugLot * 10 ** dp) / 10 ** dp : null;
+      const ok = lotFloor !== null && lotFloor > 0;
+      $('calc-sug-box').classList.toggle('hidden', !ok && !t.instrument.trim());
+      $('calc-sug').textContent = ok ? fmtNum(lotFloor, dp) + ' lot' : '-';
+      $('calc-sug-sub').textContent = ok ? tr('ac_sug_sub', { n: fmtNum(pct, 2) }) : '';
+      $('apply-lot-btn').disabled = !ok;
+      sugLotValue = ok ? String(lotFloor) : null;
+      // Per-market risk limit of the chosen account, when the risk % is known.
+      const warnEl = $('form-mkt-warn');
+      if (accPct !== null && c.riskPct !== null && c.riskPct > accPct) {
+        warnEl.textContent = tr('v_mkt', { n: fmtNum(c.riskPct, 2), m: fmtNum(accPct, 2) });
+        warnEl.classList.remove('hidden');
+      } else warnEl.classList.add('hidden');
     }
+    let sugLotValue = null;   // last suggested lot, applied by #apply-lot-btn
+    $('apply-lot-btn').addEventListener('click', () => {
+      if (sugLotValue === null) return;
+      form.elements.lot_size.value = sugLotValue;
+      updateCalc();
+    });
 
     function showView(name) {
       $('list-view').classList.toggle('hidden', name !== 'list');
       $('form-view').classList.toggle('hidden', name !== 'form');
       $('import-view').classList.toggle('hidden', name !== 'import');
       $('export-view').classList.toggle('hidden', name !== 'export');
+      $('quick-view').classList.toggle('hidden', name !== 'quick');
+      $('accounts-view').classList.toggle('hidden', name !== 'accounts');
       window.scrollTo(0, 0);
     }
 
     function openForm(trade) {
-      editingId = trade ? trade.id : null;
+      editingId = trade && trade.id ? Number(trade.id) : null;
+      const isEdit = editingId !== null;
       if (trade) fillForm(trade);
-      else { form.reset(); form.elements.trade_date.value = today(); }
-      $('form-title').textContent = trade ? tr('f_edit') : tr('l_new');
-      $('save-btn').textContent = trade ? tr('f_save_edit') : tr('f_save_new');
-      $('delete-btn').classList.toggle('hidden', !trade);
+      else { form.reset(); setShot('', ''); form.elements.trade_date.value = today(); }
+      $('form-title').textContent = isEdit ? tr('f_edit') : tr('l_new');
+      $('save-btn').textContent = isEdit ? tr('f_save_edit') : tr('f_save_new');
+      $('delete-btn').classList.toggle('hidden', !isEdit);
       $('form-error').classList.add('hidden');
       $('import-note').classList.add('hidden');
       updateCalc();
@@ -1309,6 +1727,10 @@
     $('empty-new-btn').addEventListener('click', () => openForm(null));
     $('back-btn').addEventListener('click', () => showView('list'));
     $('retry-btn').addEventListener('click', loadTrades);
+    $('quick-btn').addEventListener('click', goQuick);
+    $('quick-back-btn').addEventListener('click', () => { location.hash = '#/jurnal'; showView('list'); });
+    $('accounts-btn').addEventListener('click', goAccounts);
+    $('accounts-back-btn').addEventListener('click', () => { location.hash = '#/jurnal'; showView('list'); });
 
     // ---- Ekspor CSV ---------------------------------------------------------
     // Shown as text with a copy button: file downloads do not work in the
@@ -1381,7 +1803,7 @@
 
     // ---- Kalkulator lot & risiko --------------------------------------------
     function updateLotCalc() {
-      const cap = num($('calc-capital').value), pct = num($('calc-risk-pct').value);
+      const cap = num($('calc-capital').value), pct = num($('lc-risk-pct').value);
       const sl = num($('calc-sl-dist').value), pip = num($('calc-pip-value').value);
       const riskUsd = cap !== null && pct !== null && cap > 0 && pct > 0 ? cap * pct / 100 : null;
       const lot = riskUsd !== null && sl !== null && pip !== null && sl > 0 && pip > 0 ? riskUsd / (sl * pip) : null;
@@ -1391,14 +1813,298 @@
       $('lc-profit').textContent = riskUsd === null ? '-' : fmtMoney(riskUsd * 2);
       $('lc-warn').classList.toggle('hidden', !(pct !== null && pct > 1));
     }
-    for (const id of ['calc-capital', 'calc-risk-pct', 'calc-sl-dist', 'calc-pip-value']) $(id).addEventListener('input', updateLotCalc);
+    for (const id of ['calc-capital', 'lc-risk-pct', 'calc-sl-dist', 'calc-pip-value']) $(id).addEventListener('input', updateLotCalc);
     updateLotCalc();
+
+    // ---- Screenshot chart ----------------------------------------------------
+    // Files go to the platform's storage through the bridge; only the
+    // returned URL is kept on the trade. Outside the platform (and on
+    // failure) the input degrades to a plain image URL.
+    function setShot(url, id) {
+      form.elements.screenshot_url.value = url || '';
+      form.elements.screenshot_id.value = id || '';
+      $('shot-url').value = url && /^https?:/i.test(url) ? url : '';
+      $('shot-preview').classList.toggle('hidden', !url);
+      if (url) $('shot-preview').src = url;
+      $('shot-remove').classList.toggle('hidden', !url && !id);
+    }
+    function shotStatus(msg) {
+      const el = $('shot-status');
+      if (!msg) { el.classList.add('hidden'); return; }
+      el.textContent = msg;
+      el.classList.remove('hidden');
+    }
+    $('shot-input').addEventListener('change', async () => {
+      const file = $('shot-input').files && $('shot-input').files[0];
+      if (!file) return;
+      if (file.size > 5 * 1024 * 1024) { shotStatus(tr('f_shot_big')); return; }
+      if (!window.usernode || !window.usernode.uploadFile) { shotStatus(tr('f_shot_nobridge')); return; }
+      shotStatus(tr('f_shot_uploading'));
+      try {
+        const stored = await window.usernode.uploadFile(file, { visibility: 'public' });
+        setShot(stored.url, stored.id);
+        shotStatus('');
+      } catch {
+        shotStatus(tr('f_shot_fail'));
+      }
+    });
+    $('shot-url').addEventListener('input', () => {
+      const v = $('shot-url').value.trim();
+      if (v) setShot(v, form.elements.screenshot_id.value);
+      else setShot('', form.elements.screenshot_id.value);
+    });
+    $('shot-remove').addEventListener('click', () => {
+      const id = form.elements.screenshot_id.value;
+      if (id && window.usernode && window.usernode.deleteFile) window.usernode.deleteFile(id).catch(() => {});
+      $('shot-input').value = '';
+      setShot('', '');
+      shotStatus('');
+    });
+
+    // ---- Catat cepat -----------------------------------------------------------
+    // A minimal form for logging a trade at entry: instrument, side, entry,
+    // SL, TP, lot. Date is always today; everything else is filled in later
+    // through edit trade.
+    const quickForm = $('quick-form');
+    function goQuick() {
+      if (location.hash === '#/cepat') routeHash();
+      else location.hash = '#/cepat';
+    }
+    function goAccounts() {
+      if (location.hash === '#/akun') routeHash();
+      else location.hash = '#/akun';
+    }
+    function quickToTrade() {
+      const fd = new FormData(quickForm);
+      const t = { trade_date: today() };
+      for (const k of ['instrument', 'position', 'entry_price', 'stop_loss', 'take_profit', 'lot_size']) {
+        t[k] = (fd.get(k) || '').toString();
+      }
+      const pair = findPair(t.instrument);
+      t.category = pair ? pair.cat : '';
+      return t;
+    }
+    function quickError(msg) {
+      $('quick-error').textContent = msg;
+      $('quick-error').classList.remove('hidden');
+    }
+    quickForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      $('quick-error').classList.add('hidden');
+      const t = quickToTrade();
+      if (!t.instrument.trim()) return quickError(tr('e_instr_req'));
+      for (const k of NUMERIC_FIELDS) {
+        if (t[k] !== undefined && t[k] !== '' && num(t[k]) === null) return quickError(tr('e_num'));
+      }
+      $('quick-save-btn').disabled = true;
+      try {
+        const res = await fetch('/api/trades', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...headers },
+          body: JSON.stringify(t),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) return quickError(terr(data.error || tr('e_save')) + '. ' + tr('e_retry'));
+        await loadTrades();
+        $('import-note').textContent = tr('q_saved');
+        $('import-note').classList.remove('hidden');
+        location.hash = '#/jurnal';
+        showView('list');
+      } catch {
+        quickError(tr('e_save_conn'));
+      } finally {
+        $('quick-save-btn').disabled = false;
+      }
+    });
+    $('quick-full-btn').addEventListener('click', () => {
+      // Carry what was typed into the full form; nothing is saved yet.
+      location.hash = '#/jurnal';
+      openForm(quickToTrade());
+    });
+
+    // ---- Akun & batas risiko -------------------------------------------------
+    // Several accounts per user, each with a starting balance, an optional
+    // daily loss limit and optional per-market risk limits (% of capital).
+    // server.js keeps them in the private accounts table.
+    function accountRow(k, v) {
+      return '<div class="flex justify-between gap-3 border-b border-line py-1.5 text-sm last:border-0"><dt class="text-muted">' + k + '</dt><dd class="text-right">' + esc(v) + '</dd></div>';
+    }
+    function accountLimitText(a) {
+      const m = a.market_limits || {};
+      const parts = Object.keys(m).filter(c => num(m[c]) !== null)
+        .map(c => tr(CATEGORY_KEYS[c] || c) + ' ' + fmtNum(m[c], 2) + '%');
+      return parts.length ? parts.join(', ') : '-';
+    }
+    async function loadAccounts() {
+      try {
+        const res = await fetch('/api/accounts' + (DEMO ? '?demo=1' : ''), { headers });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        accounts = data.accounts || [];
+      } catch (err) {
+        console.warn('load accounts failed', err.message);
+        accounts = [];
+      }
+      renderAccountOptions();
+      renderAccounts();
+      updateDailyLimit();
+    }
+    function renderAccounts() {
+      const el = $('accounts-list');
+      if (!accounts.length) {
+        el.innerHTML = '<div class="flex flex-col items-center gap-2 rounded-xl border border-line p-6 text-center">' +
+          '<p class="font-semibold">' + esc(tr('acc_empty_t')) + '</p>' +
+          '<p class="text-sm text-muted">' + esc(tr('acc_empty_b')) + '</p></div>';
+        return;
+      }
+      el.innerHTML = accounts.map(a => {
+        const demo = Number(a.id) < 0;
+        const buttons = demo ? '' :
+          '<div class="flex gap-2"><button type="button" data-account-edit="' + esc(a.id) + '" class="rounded-lg border border-line-2 px-3 py-1.5 text-sm text-ink hover:bg-surface-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent">' + esc(tr('acc_edit')) + '</button>' +
+          '<button type="button" data-account-del="' + esc(a.id) + '" class="rounded-lg border border-sell/50 px-3 py-1.5 text-sm text-sell hover:bg-sell/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent">' + esc(tr('acc_del')) + '</button></div>';
+        return '<article class="rounded-xl border border-line p-4 flex flex-col gap-2">' +
+          '<div class="flex items-center justify-between gap-2"><h3 class="text-base font-bold">' + esc(a.name) + '</h3>' +
+            (demo ? '<span class="rounded-full bg-surface-2 px-2 py-0.5 text-xs text-muted">demo</span>' : '') + '</div>' +
+          '<dl>' +
+            accountRow(esc(tr('acc_balance')), a.starting_balance === null || a.starting_balance === undefined ? '-' : fmtMoney(num(a.starting_balance))) +
+            accountRow(esc(tr('acc_limit')), a.daily_loss_limit === null || a.daily_loss_limit === undefined ? '-' : fmtMoney(num(a.daily_loss_limit))) +
+            accountRow(esc(tr('acc_mkt')), accountLimitText(a)) +
+          '</dl>' + buttons +
+        '</article>';
+      }).join('');
+    }
+    function renderAccountOptions() {
+      const sel = form.elements.account_id;
+      const prev = sel.value;
+      sel.innerHTML = '<option value="">' + esc(tr('acc_pick')) + '</option>' +
+        accounts.filter(a => Number(a.id) > 0).map(a => '<option value="' + esc(a.id) + '">' + esc(a.name) + '</option>').join('');
+      if (prev && accounts.some(a => String(a.id) === prev)) sel.value = prev;
+    }
+    // Choosing an account fills an empty capital field with its balance.
+    form.elements.account_id.addEventListener('change', () => {
+      const a = accounts.find(x => String(x.id) === form.elements.account_id.value);
+      if (a && form.elements.capital.value === '' && num(a.starting_balance) !== null) {
+        form.elements.capital.value = String(num(a.starting_balance));
+      }
+      updateCalc();
+    });
+    function renderAccountFormTitle() {
+      $('account-form-title').textContent = tr(editingAccountId ? 'acc_edit' : 'acc_add');
+    }
+    function resetAccountForm() {
+      editingAccountId = null;
+      accountForm.reset();
+      $('account-error').classList.add('hidden');
+      $('account-cancel-btn').classList.add('hidden');
+      renderAccountFormTitle();
+    }
+    function openAccountEdit(a) {
+      editingAccountId = Number(a.id);
+      accountForm.elements.name.value = a.name || '';
+      accountForm.elements.starting_balance.value = num(a.starting_balance) === null ? '' : String(num(a.starting_balance));
+      accountForm.elements.daily_loss_limit.value = num(a.daily_loss_limit) === null ? '' : String(num(a.daily_loss_limit));
+      const m = a.market_limits || {};
+      for (const c of ['forex', 'saham', 'kripto']) {
+        accountForm.elements['mkt_' + c].value = num(m[c]) === null ? '' : String(num(m[c]));
+      }
+      $('account-cancel-btn').classList.remove('hidden');
+      renderAccountFormTitle();
+      accountForm.elements.name.focus();
+    }
+    const accountForm = $('account-form');
+    accountForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const fd = new FormData(accountForm);
+      const body = {
+        name: (fd.get('name') || '').toString().trim(),
+        starting_balance: (fd.get('starting_balance') || '').toString().trim(),
+        daily_loss_limit: (fd.get('daily_loss_limit') || '').toString().trim(),
+        market_limits: {
+          forex: (fd.get('mkt_forex') || '').toString().trim(),
+          saham: (fd.get('mkt_saham') || '').toString().trim(),
+          kripto: (fd.get('mkt_kripto') || '').toString().trim(),
+        },
+      };
+      if (!body.name) return showFormError(tr('e_acc_name'));
+      $('account-save-btn').disabled = true;
+      try {
+        const res = await fetch(editingAccountId ? '/api/accounts/' + editingAccountId : '/api/accounts', {
+          method: editingAccountId ? 'PUT' : 'POST',
+          headers: { 'Content-Type': 'application/json', ...headers },
+          body: JSON.stringify(body),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) return showFormError(terr(data.error || tr('e_acc_fail')));
+        resetAccountForm();
+        await loadAccounts();
+      } catch {
+        showFormError(tr('e_acc_fail'));
+      } finally {
+        $('account-save-btn').disabled = false;
+      }
+    });
+    $('account-cancel-btn').addEventListener('click', resetAccountForm);
+    $('accounts-list').addEventListener('click', async (e) => {
+      const editBtn = e.target.closest('[data-account-edit]');
+      if (editBtn) {
+        const a = accounts.find(x => String(x.id) === editBtn.dataset.accountEdit);
+        if (a) openAccountEdit(a);
+        return;
+      }
+      const delBtn = e.target.closest('[data-account-del]');
+      if (!delBtn || !confirm(tr('acc_del_confirm'))) return;
+      delBtn.disabled = true;
+      try {
+        const res = await fetch('/api/accounts/' + delBtn.dataset.accountDel, { method: 'DELETE', headers });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          $('account-error').textContent = terr(data.error || tr('e_acc_del'));
+          $('account-error').classList.remove('hidden');
+          return;
+        }
+        resetAccountForm();
+        await loadAccounts();
+      } catch {
+        $('account-error').textContent = tr('e_acc_del');
+        $('account-error').classList.remove('hidden');
+      } finally {
+        delBtn.disabled = false;
+      }
+    });
+
+    // Peringatan batas rugi harian: rugi (hasil negatif) hari ini per akun
+    // dibanding batas akun. Tanpa akun atau tanpa batas, banner tetap hidden.
+    function updateDailyLimit() {
+      const banner = $('limit-banner');
+      const td = today();
+      const byAcc = {};
+      for (const t of trades) {
+        if (t.trade_date !== td || num(t.result_amount) === null) continue;
+        const k = t.account_id === null || t.account_id === undefined ? '' : String(t.account_id);
+        byAcc[k] = (byAcc[k] || []).concat(t);
+      }
+      let hit = null;
+      for (const a of accounts) {
+        const lim = num(a.daily_loss_limit);
+        if (lim === null || lim <= 0) continue;
+        const list = byAcc[String(a.id)] || [];
+        const loss = list.reduce((s, t) => s + num(t.result_amount), 0);
+        if (loss <= -lim) hit = { name: a.name, loss, lim };
+      }
+      banner.classList.toggle('hidden', !hit);
+      if (hit) {
+        $('limit-banner-text').textContent = tr('lim_breach', { a: hit.name, n: fmtMoney(hit.loss), m: fmtMoney(hit.lim) });
+      }
+    }
 
     // ---- Tab dan navigasi bawah ---------------------------------------------
     // Hash routes (#/jurnal, #/broker, #/sinyal, #/vip) so a tab can be shared
-    // and reopened. The Jurnal tab keeps its own sub-view (list/form/import).
+    // and reopened. The Jurnal tab keeps its own sub-view (list/form/import),
+    // plus two deep-linkable sub-routes of its own: #/cepat (catat cepat) and
+    // #/akun (akun & batas risiko).
     const TABS = ['jurnal', 'broker', 'sinyal', 'vip'];
     const TAB_VIEWS = { jurnal: 'jurnal-view', broker: 'broker-view', sinyal: 'signals-view', vip: 'vip-view' };
+    const SUB_ROUTES = { cepat: 'quick', akun: 'accounts' };
     function currentTab() {
       const m = /^#\/([a-z]+)/.exec(location.hash);
       return m && TABS.includes(m[1]) ? m[1] : 'jurnal';
@@ -1411,7 +2117,13 @@
       }
       window.scrollTo(0, 0);
     }
-    window.addEventListener('hashchange', () => showTab(currentTab()));
+    function routeHash() {
+      const m = /^#\/([a-z]+)/.exec(location.hash);
+      const h = m ? m[1] : 'jurnal';
+      if (SUB_ROUTES[h]) { showTab('jurnal'); showView(SUB_ROUTES[h]); return; }
+      showTab(currentTab());
+    }
+    window.addEventListener('hashchange', routeHash);
 
     const bottomChrome = $('bottom-chrome');
     function measureChrome() { document.documentElement.style.setProperty('--chrome-h', bottomChrome.offsetHeight + 'px'); }
@@ -1644,7 +2356,7 @@
     renderVipStatus();
     renderSignals();
     renderPairOptions();
-    showTab(currentTab());
+    routeHash();
 
     // ---- Impor CSV ----------------------------------------------------------
     // The file is parsed here; the server revalidates every row and decides
@@ -2186,6 +2898,7 @@
     $('import-back-btn').addEventListener('click', () => { resetImport(); showView('list'); });
 
     loadTrades();
+    loadAccounts();
     // Must run after every `let` above is initialised: it calls rerenderAll(),
     // which references the import state.
     initLang();
