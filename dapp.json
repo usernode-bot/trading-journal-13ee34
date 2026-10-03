@@ -144,6 +144,38 @@
       ]
     },
     {
+      "name": "Bottom navigation shows the Berita tab",
+      "path": "/",
+      "expectSelector": "#tab-berita"
+    },
+    {
+      "id": "news.tab",
+      "name": "Berita tab shows seeded market news",
+      "path": "/#/berita",
+      "expectText": "Staging demo: BBCA",
+      "visual": true,
+      "impact": [
+        "public/index.html",
+        "public/i18n.js",
+        "server.js"
+      ]
+    },
+    {
+      "name": "Berita tab offers category and sentiment filters",
+      "path": "/#/berita",
+      "expectSelector": "#news-category"
+    },
+    {
+      "name": "Berita tab is translated in English",
+      "path": "/?lang=en#/berita",
+      "expectText": "Market news"
+    },
+    {
+      "name": "Trade rows show news marker near high-impact news",
+      "path": "/?demo=1#/jurnal",
+      "expectSelector": "#trade-tbody .news-chip"
+    },
+    {
       "name": "Disclaimer footer tampil",
       "path": "/",
       "expectText": "Trading berisiko tinggi"
