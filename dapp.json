@@ -87,6 +87,33 @@
       ]
     },
     {
+      "id": "journal.pnl",
+      "name": "PNL card shows total P&L, win rate and closed trades",
+      "path": "/?demo=1",
+      "expectSelector": "#pnl-card:not(.hidden)",
+      "expectText": "-$100,00",
+      "visual": true,
+      "impact": [
+        "public/index.html",
+        "public/i18n.js"
+      ]
+    },
+    {
+      "name": "PNL card switches to English",
+      "path": "/?demo=1&lang=en",
+      "expectText": "Closed trades"
+    },
+    {
+      "name": "Instrumen menyarankan pair emas, perak dan kripto",
+      "path": "/",
+      "expectSelector": "#instrument-pairs option[value='XAGUSD'] ~ option[value='DOGEUSDT']"
+    },
+    {
+      "name": "Kartu PNL tersembunyi saat jurnal kosong",
+      "path": "/",
+      "expectSelector": "#pnl-card.hidden"
+    },
+    {
       "id": "journal.import",
       "name": "Journal offers CSV import",
       "path": "/",
@@ -197,6 +224,31 @@
       "impact": [
         "public/index.html"
       ]
+    },
+    {
+      "id": "broker.exchanges",
+      "name": "Broker tab groups crypto exchanges separately",
+      "path": "/#/broker",
+      "expectText": "Bursa kripto",
+      "visual": true,
+      "impact": [
+        "public/index.html"
+      ]
+    },
+    {
+      "name": "Broker tab lists a crypto exchange",
+      "path": "/#/broker",
+      "expectText": "Indodax"
+    },
+    {
+      "name": "Broker tab lists an Indonesian stock broker",
+      "path": "/#/broker",
+      "expectText": "Ajaib Sekuritas"
+    },
+    {
+      "name": "VIP broker dropdown includes exchanges",
+      "path": "/#/vip",
+      "expectText": "Indodax"
     },
     {
       "name": "Sinyal terkunci untuk pengguna Gratis",

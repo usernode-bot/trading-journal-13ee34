@@ -36,7 +36,10 @@ VIP-gated signal list. UI copy is in Bahasa Indonesia.
 - Broker, VIP and Sinyal tabs are driven by the constants at the top of the
   script: `BROKERS` (Exness with its affiliate link, two placeholder
   comparators), `CONTACT` (admin email/WhatsApp/Telegram), `PLANS` and
-  `SIGNALS` (five example signals). The selected broker and VIP status live
+  `SIGNALS` (eight example signals). `PAIRS` lists the forex, metal and
+  crypto pairs suggested in the journal's instrument field; picking one fills
+  an empty category, and XAUUSD/XAGUSD carry their own contract size for the
+  risk estimate. The selected broker and VIP status live
   only in memory; the payment step is a placeholder with a "simulate
   success" button. `// TODO backend:` comments mark where signup, payment
   and signal delivery should connect to a server.
