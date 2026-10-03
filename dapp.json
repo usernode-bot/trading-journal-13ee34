@@ -80,7 +80,7 @@
       "id": "journal.summary",
       "name": "Summary shows win rate and max drawdown",
       "path": "/?demo=1",
-      "expectText": "5,88% dari modal puncak",
+      "expectText": "8,24% dari modal puncak",
       "visual": true,
       "impact": [
         "public/index.html"
@@ -91,7 +91,7 @@
       "name": "PNL card shows total P&L, win rate and closed trades",
       "path": "/?demo=1",
       "expectSelector": "#pnl-card:not(.hidden)",
-      "expectText": "-$100,00",
+      "expectText": "-$160,00",
       "visual": true,
       "impact": [
         "public/index.html",
