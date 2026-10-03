@@ -287,7 +287,8 @@
           </div>
           <div class="grid grid-cols-2 gap-3">
             <label class="flex flex-col gap-1 text-sm"><span class="text-ink-2" data-i18n="h_instr">Instrumen</span>
-              <input name="instrument" type="text" required maxlength="40" autocapitalize="characters" placeholder="EURUSD, BBCA, BTC" class="field"></label>
+              <input name="instrument" type="text" required maxlength="40" autocapitalize="characters" list="instrument-pairs" placeholder="EURUSD, BBCA, BTC" class="field">
+              <datalist id="instrument-pairs"></datalist></label>
             <label class="flex flex-col gap-1 text-sm"><span class="text-ink-2" data-i18n="c_cat">Kategori</span>
               <select name="category" class="field">
                 <option value="" data-i18n="f_pick">Pilih</option>
@@ -678,6 +679,7 @@
       renderVipStatus();
       renderVipStatic();
       renderSignals();
+      renderPairOptions();
       updateLotCalc();
       showListState(listState);   // keeps loading/error states intact
       if (listState === 'list' || listState === 'empty') renderList();
@@ -810,6 +812,24 @@
         reason: 'sig_r4', releasedAt: '2026-09-30 15:45 WIB', status: 'sl' },
       { id: 5, pair: 'BTCUSD', side: 'buy', entry: 64000, sl: 63000, tp1: 66000, tp2: 68000, timeframe: 'H4',
         reason: 'sig_r5', releasedAt: '2026-10-02 08:00 WIB', status: 'aktif' },
+      { id: 6, pair: 'AUDUSD', side: 'buy', entry: 0.6650, sl: 0.6620, tp1: 0.6710, tp2: 0.6760, timeframe: 'H1',
+        reason: 'sig_r6', releasedAt: '2026-10-02 13:20 WIB', status: 'aktif' },
+      { id: 7, pair: 'ETHUSD', side: 'sell', entry: 2600, sl: 2650, tp1: 2500, tp2: 2420, timeframe: 'H4',
+        reason: 'sig_r7', releasedAt: '2026-09-30 11:00 WIB', status: 'tp' },
+      { id: 8, pair: 'XAGUSD', side: 'buy', entry: 31.20, sl: 30.90, tp1: 31.80, tp2: 32.30, timeframe: 'H1',
+        reason: 'sig_r8', releasedAt: '2026-10-01 16:10 WIB', status: 'sl' },
+    ];
+    // Instrument suggestions for the journal form (only suggestions: any
+    // instrument can still be typed). `contract` (units per lot) overrides
+    // CONTRACT_SIZE for the risk estimate; metals are filed under forex.
+    const PAIRS = [
+      { s: 'EURUSD', cat: 'forex' }, { s: 'GBPUSD', cat: 'forex' }, { s: 'USDJPY', cat: 'forex' }, { s: 'USDCHF', cat: 'forex' },
+      { s: 'AUDUSD', cat: 'forex' }, { s: 'USDCAD', cat: 'forex' }, { s: 'NZDUSD', cat: 'forex' },
+      { s: 'EURJPY', cat: 'forex' }, { s: 'GBPJPY', cat: 'forex' }, { s: 'EURGBP', cat: 'forex' }, { s: 'AUDJPY', cat: 'forex' },
+      { s: 'EURAUD', cat: 'forex' }, { s: 'GBPAUD', cat: 'forex' },
+      { s: 'XAUUSD', cat: 'forex', contract: 100 }, { s: 'XAGUSD', cat: 'forex', contract: 5000 },
+      { s: 'BTCUSDT', cat: 'kripto' }, { s: 'ETHUSDT', cat: 'kripto' }, { s: 'BNBUSDT', cat: 'kripto' }, { s: 'SOLUSDT', cat: 'kripto' },
+      { s: 'XRPUSDT', cat: 'kripto' }, { s: 'ADAUSDT', cat: 'kripto' }, { s: 'DOGEUSDT', cat: 'kripto' },
     ];
 
     // State broker/VIP hidup di memori saja dan hilang saat halaman dimuat
@@ -847,8 +867,10 @@
       const slDist = entry !== null && sl !== null && entry !== sl ? Math.abs(entry - sl) : null;
       let risk = num(t.risk_amount);
       let riskDerived = false;
-      if (risk === null && slDist !== null && lot !== null && CONTRACT_SIZE[t.category]) {
-        risk = slDist * lot * CONTRACT_SIZE[t.category];
+      const pair = findPair(t.instrument);
+      const contract = CONTRACT_SIZE[t.category] && (pair && pair.contract || CONTRACT_SIZE[t.category]);
+      if (risk === null && slDist !== null && lot !== null && contract) {
+        risk = slDist * lot * contract;
         riskDerived = true;
       }
       const riskPct = risk !== null && capital ? risk / capital * 100 : null;
@@ -861,6 +883,16 @@
       if (t.followed_plan === false) violations.push(tr('v_plan'));
       const status = violations.length ? 'bad' : (riskPct !== null && plannedRR !== null ? 'ok' : 'unknown');
       return { risk, riskDerived, riskPct, r, plannedRR, actualRR, violations, status, result };
+    }
+
+    // "EUR/USD", "eurusd" and "EURUSD" all find the same pair.
+    function findPair(instr) {
+      const key = String(instr || '').toUpperCase().replace(/[\s/._-]/g, '');
+      return PAIRS.find(p => p.s === key) || null;
+    }
+    function renderPairOptions() {
+      $('instrument-pairs').innerHTML = PAIRS.map(p =>
+        '<option value="' + esc(p.s) + '" label="' + esc(tr(CATEGORY_KEYS[p.cat])) + '"></option>').join('');
     }
 
     function fmtNum(v, max) {
@@ -1216,6 +1248,11 @@
       $('form-error').classList.remove('hidden');
     }
 
+    // A listed pair fills in an empty category; a chosen one is never changed.
+    form.elements.instrument.addEventListener('input', () => {
+      const pair = findPair(form.elements.instrument.value);
+      if (pair && form.elements.category.value === '') form.elements.category.value = pair.cat;
+    });
     form.addEventListener('input', updateCalc);
     form.addEventListener('change', updateCalc);
 
@@ -1606,6 +1643,7 @@
     renderBrokers();
     renderVipStatus();
     renderSignals();
+    renderPairOptions();
     showTab(currentTab());
 
     // ---- Impor CSV ----------------------------------------------------------

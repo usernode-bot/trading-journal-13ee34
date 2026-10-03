@@ -110,8 +110,11 @@ kripto) and sees auto-calculated risk %, R and RR plus a discipline badge
 - Screens are hash tabs (`#/jurnal`, `#/broker`, `#/sinyal`, `#/vip`) behind
   a fixed bottom nav; `--chrome-h` (measured) pads `<main>` so content is
   never under it.
-- `BROKERS`, `CONTACT`, `PLANS` and `SIGNALS` at the top of the script are
-  the only place broker, contact, plan and example-signal data live. Keep
+- `BROKERS`, `CONTACT`, `PLANS`, `SIGNALS` and `PAIRS` at the top of the
+  script are the only place broker, contact, plan, example-signal and
+  suggested-pair data live. `PAIRS` only suggests (instrument stays free text);
+  a pair's optional `contract` overrides `CONTRACT_SIZE` in the risk estimate
+  (XAUUSD 100, XAGUSD 5000; metals are filed under forex). Keep
   Exness's affiliate link with `rel="noopener sponsored"` and its affiliate
   label; never claim a broker is "terbaik" or "pasti aman", and never claim
   "pasti profit" or "akurasi 100%".
