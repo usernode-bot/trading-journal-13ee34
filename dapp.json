@@ -104,6 +104,11 @@
       "expectText": "Closed trades"
     },
     {
+      "name": "Instrumen menyarankan pair emas, perak dan kripto",
+      "path": "/",
+      "expectSelector": "#instrument-pairs option[value='XAGUSD'] ~ option[value='DOGEUSDT']"
+    },
+    {
       "name": "Kartu PNL tersembunyi saat jurnal kosong",
       "path": "/",
       "expectSelector": "#pnl-card.hidden"
