@@ -18,8 +18,9 @@ VIP-gated signal list. UI copy is in Bahasa Indonesia.
   sit on every screen. All derived numbers (risk $, risk %, R, planned/actual
   RR, discipline badge) are computed client-side in `calc()` from the stored
   fields; `summarize()` adds the recap (win rate, total P/L, average planned
-  RR, max drawdown, per-category table) and the equity curve, drawn as an
-  inline SVG once two trades have a result.
+  RR, max drawdown, per-category table) and the profit/loss chart: cumulative
+  P/L by trade date as an inline SVG line from $0, green above zero and
+  red-orange below, drawn once one trade has a result.
 - Jurnal tab extras: a lot & risk calculator (nothing is saved) and
   `Ekspor CSV`, which shows the journal as CSV text with a `Salin CSV`
   button (downloads do not work in the published page). Its headers match
@@ -35,7 +36,10 @@ VIP-gated signal list. UI copy is in Bahasa Indonesia.
 - Broker, VIP and Sinyal tabs are driven by the constants at the top of the
   script: `BROKERS` (Exness with its affiliate link, two placeholder
   comparators), `CONTACT` (admin email/WhatsApp/Telegram), `PLANS` and
-  `SIGNALS` (five example signals). The selected broker and VIP status live
+  `SIGNALS` (eight example signals). `PAIRS` lists the forex, metal and
+  crypto pairs suggested in the journal's instrument field; picking one fills
+  an empty category, and XAUUSD/XAGUSD carry their own contract size for the
+  risk estimate. The selected broker and VIP status live
   only in memory; the payment step is a placeholder with a "simulate
   success" button. `// TODO backend:` comments mark where signup, payment
   and signal delivery should connect to a server.

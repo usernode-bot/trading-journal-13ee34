@@ -1,6 +1,9 @@
 {
   "icon": { "image": "brand/icon.png" },
   "secrets": [],
+  "icon": {
+    "image": "brand/icon.png"
+  },
   "tests": [
     {
       "id": "home.logo",
@@ -10,13 +13,47 @@
       "visual": true,
       "impact": [
         "public/index.html",
-        "public/logo.svg"
+        "public/logo.svg",
+        "brand/icon.svg",
+        "brand/icon.png"
       ]
     },
     {
       "name": "Empty journal offers the first trade",
       "path": "/",
       "expectText": "Belum ada trade"
+    },
+    {
+      "name": "Language selector is available",
+      "path": "/",
+      "expectSelector": "#lang-select"
+    },
+    {
+      "id": "i18n.english",
+      "name": "English UI via the language override",
+      "path": "/?lang=en",
+      "expectText": "No trades yet",
+      "visual": true,
+      "impact": [
+        "public/index.html",
+        "public/i18n.js",
+        "server.js"
+      ]
+    },
+    {
+      "name": "Discipline badges switch to English",
+      "path": "/?demo=1&lang=en",
+      "expectText": "❌ Broken"
+    },
+    {
+      "name": "Arabic UI is translated and flips to RTL",
+      "path": "/?lang=ar",
+      "expectText": "لا صفقات بعد"
+    },
+    {
+      "name": "Disciplined demo trade gets a check badge in English",
+      "path": "/?demo=1&lang=en",
+      "expectText": "✅ Disciplined"
     },
     {
       "id": "journal.discipline",
@@ -44,11 +81,38 @@
       "id": "journal.summary",
       "name": "Summary shows win rate and max drawdown",
       "path": "/?demo=1",
-      "expectText": "5,88% dari modal puncak",
+      "expectText": "8,24% dari modal puncak",
       "visual": true,
       "impact": [
         "public/index.html"
       ]
+    },
+    {
+      "id": "journal.pnl",
+      "name": "PNL card shows total P&L, win rate and closed trades",
+      "path": "/?demo=1",
+      "expectSelector": "#pnl-card:not(.hidden)",
+      "expectText": "-$160,00",
+      "visual": true,
+      "impact": [
+        "public/index.html",
+        "public/i18n.js"
+      ]
+    },
+    {
+      "name": "PNL card switches to English",
+      "path": "/?demo=1&lang=en",
+      "expectText": "Closed trades"
+    },
+    {
+      "name": "Instrumen menyarankan pair emas, perak dan kripto",
+      "path": "/",
+      "expectSelector": "#instrument-pairs option[value='XAGUSD'] ~ option[value='DOGEUSDT']"
+    },
+    {
+      "name": "Kartu PNL tersembunyi saat jurnal kosong",
+      "path": "/",
+      "expectSelector": "#pnl-card.hidden"
     },
     {
       "id": "journal.import",
@@ -81,6 +145,38 @@
       ]
     },
     {
+      "name": "Bottom navigation shows the Berita tab",
+      "path": "/",
+      "expectSelector": "#tab-berita"
+    },
+    {
+      "id": "news.tab",
+      "name": "Berita tab shows seeded market news",
+      "path": "/#/berita",
+      "expectText": "Staging demo: BBCA",
+      "visual": true,
+      "impact": [
+        "public/index.html",
+        "public/i18n.js",
+        "server.js"
+      ]
+    },
+    {
+      "name": "Berita tab offers category and sentiment filters",
+      "path": "/#/berita",
+      "expectSelector": "#news-category"
+    },
+    {
+      "name": "Berita tab is translated in English",
+      "path": "/?lang=en#/berita",
+      "expectText": "Market news"
+    },
+    {
+      "name": "Trade rows show news marker near high-impact news",
+      "path": "/?demo=1#/jurnal",
+      "expectSelector": "#trade-tbody .news-chip"
+    },
+    {
       "name": "Disclaimer footer tampil",
       "path": "/",
       "expectText": "Trading berisiko tinggi"
@@ -106,6 +202,16 @@
       ]
     },
     {
+      "name": "Grafik profit/loss memakai warna rugi di bawah nol",
+      "path": "/?demo=1",
+      "expectSelector": "#equity-chart g[data-pl='loss'] path.text-sell"
+    },
+    {
+      "name": "Jurnal kosong menjelaskan grafik profit/loss",
+      "path": "/",
+      "expectText": "grafik profit/loss kumulatif akan muncul di sini"
+    },
+    {
       "name": "Rekap per kategori tampil",
       "path": "/?demo=1",
       "expectText": "Performa per kategori"
@@ -126,6 +232,31 @@
       ]
     },
     {
+      "id": "broker.exchanges",
+      "name": "Broker tab groups crypto exchanges separately",
+      "path": "/#/broker",
+      "expectText": "Bursa kripto",
+      "visual": true,
+      "impact": [
+        "public/index.html"
+      ]
+    },
+    {
+      "name": "Broker tab lists a crypto exchange",
+      "path": "/#/broker",
+      "expectText": "Indodax"
+    },
+    {
+      "name": "Broker tab lists an Indonesian stock broker",
+      "path": "/#/broker",
+      "expectText": "Ajaib Sekuritas"
+    },
+    {
+      "name": "VIP broker dropdown includes exchanges",
+      "path": "/#/vip",
+      "expectText": "Indodax"
+    },
+    {
       "name": "Sinyal terkunci untuk pengguna Gratis",
       "path": "/#/sinyal",
       "expectText": "Daftar VIP"
@@ -139,16 +270,75 @@
       "impact": [
         "public/index.html"
       ]
+    },
+    {
+      "id": "journal.advanced",
+      "name": "Advanced analysis shows profit factor, expectancy and streaks",
+      "path": "/?demo=1",
+      "expectText": "Profit factor",
+      "visual": true,
+      "impact": [
+        "public/index.html",
+        "public/i18n.js"
+      ]
+    },
+    {
+      "name": "Advanced analysis is hidden on an empty journal",
+      "path": "/",
+      "expectSelector": "#adv-section.hidden"
+    },
+    {
+      "name": "Calendar heatmap shows a day cell",
+      "path": "/?demo=1",
+      "expectSelector": "#cal-grid div"
+    },
+    {
+      "name": "Breakdown tables show session, instrument and setup",
+      "path": "/?demo=1",
+      "expectText": "Per sesi"
+    },
+    {
+      "name": "Daily loss limit banner fires on the demo account",
+      "path": "/?demo=1",
+      "expectSelector": "#limit-banner:not(.hidden)"
+    },
+    {
+      "name": "Quick log view opens from its deep link",
+      "path": "/#/cepat",
+      "expectText": "Catat cepat"
+    },
+    {
+      "name": "Accounts view shows the empty state",
+      "path": "/#/akun",
+      "expectText": "Belum ada akun"
+    },
+    {
+      "name": "Demo accounts appear in the accounts view",
+      "path": "/?demo=1#/akun",
+      "expectText": "Staging demo: Akun forex"
+    },
+    {
+      "name": "Trade form has the pre-trade checklist and account picker",
+      "path": "/",
+      "expectSelector": "#form-view input[name='checklist']"
+    },
+    {
+      "name": "Trade form has the account picker",
+      "path": "/",
+      "expectSelector": "#form-view select[name='account_id']"
     }
   ],
   "visibility": {
-    "build": "public",
+    "build": "private",
     "view": "public"
   },
   "governance": {
     "approvers": "anyone",
     "approvals": {
-      "atLeast": 21
+      "atLeast": 2
     }
-  }
+  },
+  "admins": [
+    "ocank14"
+  ]
 }

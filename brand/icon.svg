@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- Trading journal icon: flat black chart + pencil on a white rounded square.
+       Request #15: only #0F0F0F on white, no gradients, no shadows, no text.
+       The canvas outside the rounded square stays transparent. -->
+  <!-- White rounded square with a thin light-gray outline -->
+  <rect x="14" y="14" width="996" height="996" rx="224" fill="#FFFFFF" stroke="#E4E4E7" stroke-width="10"/>
+  <!-- Chart: thin baseline under the bars -->
+  <line x1="164" y1="808" x2="610" y2="808" stroke="#0F0F0F" stroke-width="12" stroke-linecap="round"/>
+  <!-- Three ascending bars (small, medium, tall), rounded tops only -->
+  <path fill="#0F0F0F" d="M186 808 V674 Q186 658 202 658 H276 Q292 658 292 674 V808 Z"/>
+  <path fill="#0F0F0F" d="M334 808 V586 Q334 570 350 570 H424 Q440 570 440 586 V808 Z"/>
+  <path fill="#0F0F0F" d="M482 808 V516 Q482 500 498 500 H572 Q588 500 588 516 V808 Z"/>
+  <!-- Upward zigzag trend line above the bars -->
+  <path fill="none" stroke="#0F0F0F" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" d="M224 520 L340 420 L450 475 L545 355"/>
+  <!-- Round dot at each corner of the trend line -->
+  <circle fill="#0F0F0F" cx="224" cy="520" r="20"/>
+  <circle fill="#0F0F0F" cx="340" cy="420" r="20"/>
+  <circle fill="#0F0F0F" cx="450" cy="475" r="20"/>
+  <circle fill="#0F0F0F" cx="545" cy="355" r="20"/>
+  <!-- Pencil tilted 45 degrees in the top-right, tip aimed at the chart.
+       Drawn upright (tip pointing down) then rotated 45 degrees clockwise,
+       which swings the tip to the lower left. -->
+  <g transform="translate(740 330) rotate(45)">
+    <!-- Eraser, slightly rounded at the outer end -->
+    <rect x="-34" y="-165" width="68" height="47" rx="10" fill="#0F0F0F"/>
+    <!-- Body, separated from the eraser by a thin white divider -->
+    <rect x="-34" y="-106" width="68" height="211" fill="#0F0F0F"/>
+    <!-- Tip -->
+    <path fill="#0F0F0F" d="M0 165 L-34 105 L34 105 Z"/>
+  </g>
+</svg>

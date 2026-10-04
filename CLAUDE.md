@@ -110,8 +110,11 @@ kripto) and sees auto-calculated risk %, R and RR plus a discipline badge
 - Screens are hash tabs (`#/jurnal`, `#/broker`, `#/sinyal`, `#/vip`) behind
   a fixed bottom nav; `--chrome-h` (measured) pads `<main>` so content is
   never under it.
-- `BROKERS`, `CONTACT`, `PLANS` and `SIGNALS` at the top of the script are
-  the only place broker, contact, plan and example-signal data live. Keep
+- `BROKERS`, `CONTACT`, `PLANS`, `SIGNALS` and `PAIRS` at the top of the
+  script are the only place broker, contact, plan, example-signal and
+  suggested-pair data live. `PAIRS` only suggests (instrument stays free text);
+  a pair's optional `contract` overrides `CONTRACT_SIZE` in the risk estimate
+  (XAUUSD 100, XAGUSD 5000; metals are filed under forex). Keep
   Exness's affiliate link with `rel="noopener sponsored"` and its affiliate
   label; never claim a broker is "terbaik" or "pasti aman", and never claim
   "pasti profit" or "akurasi 100%".
@@ -124,3 +127,15 @@ kripto) and sees auto-calculated risk %, R and RR plus a discipline badge
   found by ticket, or by the fingerprint date + instrument + position +
   entry time + entry price + lot (only when entry price and entry time or
   lot are present).
+- i18n lives in `public/i18n.js` (`window.TJ_I18N`: 20 languages, Indonesian
+  base, `?lang=xx` non-persistent override for tests). Default and fallback
+  are `id`; the per-user choice is stored in the `user_prefs` table via
+  `GET`/`PUT /api/prefs` and cached in `localStorage` (`tj-lang`, server wins).
+  In JS use `tr(key, vars)` (never `t` — it collides with the trade param),
+  in static markup `data-i18n` / `data-i18n-ph` / `data-i18n-aria` /
+  `data-i18n-title`; data constants reference keys as `{ k, n }` and display
+  code resolves them with `tr()`. Arabic flips `<html dir>` to RTL.
+- CSV export headers and the emotion/mistake label vocabulary stay Indonesian
+  on purpose (data format, so exports round-trip); the import UI translates
+  only the mapping labels, and server error strings are translated
+  client-side via the `SERR` map + `terr()` (dynamic ones need a regex).

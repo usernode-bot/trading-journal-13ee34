@@ -114,6 +114,123 @@ app.get('/health', (_req, res) => {
 
 const IS_STAGING = process.env.USERNODE_ENV === 'staging';
 
+// ---- Language preference ----------------------------------------------------
+// Codes are the same set public/i18n.js ships; the frontend falls back to its
+// default when a stored code is unknown (e.g. after a language removal).
+const LANG_CODES = [
+  'id', 'en', 'es', 'fr', 'de', 'pt', 'ru', 'zh-CN', 'zh-TW', 'ja',
+  'ko', 'ar', 'hi', 'tr', 'it', 'nl', 'pl', 'th', 'vi', 'ms',
+];
+
+app.get('/api/prefs', (req, res) => {
+  pool.query('SELECT language FROM user_prefs WHERE user_id = $1', [req.user.id])
+    .then(({ rows }) => res.json({ language: rows[0]?.language || 'id' }))
+    .catch(() => res.status(500).json({ error: 'Gagal memuat preferensi' }));
+});
+
+app.put('/api/prefs', (req, res) => {
+  const language = req.body && req.body.language;
+  if (!LANG_CODES.includes(language)) return res.status(400).json({ error: 'Kode bahasa tidak valid' });
+  pool.query(
+    `INSERT INTO user_prefs (user_id, language) VALUES ($1, $2)
+     ON CONFLICT (user_id) DO UPDATE SET language = $2, updated_at = NOW()`,
+    [req.user.id, language]
+  )
+    .then(() => res.json({ language }))
+    .catch(() => res.status(500).json({ error: 'Gagal menyimpan preferensi' }));
+});
+
+// ---- Berita pasar -------------------------------------------------------------
+// Shared, admin-curated market news (economic calendar items and headlines)
+// that can move the prices of the listed symbols. Public content: every
+// signed-in user reads it, only the app's admins (dapp.json `admins`) write.
+// Derived numbers (related trades, journal markers) are computed in the
+// frontend from these rows plus the user's trades — never stored here.
+const NEWS_EDITORS = new Set(['ocank14']);
+const NEWS_CATEGORIES = ['ekonomi', 'forex', 'saham', 'kripto'];
+const NEWS_SENTIMENTS = ['bullish', 'bearish', 'netral'];
+const NEWS_IMPORTANCE = ['tinggi', 'sedang', 'rendah'];
+
+const NEWS_COLUMNS = `id, title, summary, category, symbols, sentiment, importance,
+  to_char(event_date, 'YYYY-MM-DD') AS event_date, to_char(event_time, 'HH24:MI') AS event_time,
+  source_url, created_by, created_at`;
+
+function cleanNews(body) {
+  const b = body || {};
+  const n = {};
+  const title = typeof b.title === 'string' ? b.title.trim() : '';
+  if (!title) throw new Error('Judul wajib diisi');
+  n.title = title.slice(0, 200);
+  n.summary = typeof b.summary === 'string' && b.summary.trim() ? b.summary.trim().slice(0, 2000) : null;
+  if (!NEWS_CATEGORIES.includes(b.category)) throw new Error('Kategori tidak valid');
+  n.category = b.category;
+  if (!NEWS_SENTIMENTS.includes(b.sentiment)) throw new Error('Sentimen tidak valid');
+  n.sentiment = b.sentiment;
+  if (!NEWS_IMPORTANCE.includes(b.importance)) throw new Error('Tingkat kepentingan tidak valid');
+  n.importance = b.importance;
+  if (!Array.isArray(b.symbols)) throw new Error('Simbol tidak valid');
+  const symbols = [...new Set(b.symbols.map(s => String(s).trim().toUpperCase()).filter(Boolean))];
+  if (symbols.some(s => s.length > 20)) throw new Error('Simbol tidak valid');
+  if (symbols.length > 10) throw new Error('Maksimal 10 simbol');
+  n.symbols = symbols;
+  if (typeof b.event_date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(b.event_date)) {
+    throw new Error('Tanggal wajib diisi');
+  }
+  n.event_date = b.event_date;
+  const time = b.event_time;
+  if (time === null || time === undefined || time === '') n.event_time = null;
+  else if (typeof time === 'string' && /^\d{2}:\d{2}(:\d{2})?$/.test(time)) n.event_time = time;
+  else throw new Error('Jam tidak valid');
+  const url = typeof b.source_url === 'string' ? b.source_url.trim() : '';
+  if (url && !/^https?:\/\//.test(url)) throw new Error('URL sumber tidak valid');
+  n.source_url = url ? url.slice(0, 500) : null;
+  return n;
+}
+
+app.get('/api/news', async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT ${NEWS_COLUMNS} FROM news_items
+       ORDER BY event_date DESC, event_time DESC NULLS LAST, id DESC LIMIT 100`
+    );
+    res.json({ news: rows, canEdit: NEWS_EDITORS.has(req.user.username) });
+  } catch (err) {
+    console.error('list news failed', err);
+    res.status(500).json({ error: 'Gagal memuat berita' });
+  }
+});
+
+app.post('/api/news', async (req, res) => {
+  if (!NEWS_EDITORS.has(req.user.username)) return res.status(403).json({ error: 'Tidak diizinkan' });
+  let n;
+  try { n = cleanNews(req.body); } catch (err) { return res.status(400).json({ error: err.message }); }
+  try {
+    const { rows } = await pool.query(
+      `INSERT INTO news_items (title, summary, category, symbols, sentiment, importance, event_date, event_time, source_url, created_by)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING ${NEWS_COLUMNS}`,
+      [n.title, n.summary, n.category, n.symbols, n.sentiment, n.importance, n.event_date, n.event_time, n.source_url, req.user.username]
+    );
+    res.status(201).json({ news: rows[0] });
+  } catch (err) {
+    console.error('create news failed', err);
+    res.status(500).json({ error: 'Gagal menyimpan berita' });
+  }
+});
+
+app.delete('/api/news/:id', async (req, res) => {
+  if (!NEWS_EDITORS.has(req.user.username)) return res.status(403).json({ error: 'Tidak diizinkan' });
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) return res.status(404).json({ error: 'Berita tidak ditemukan' });
+  try {
+    const { rowCount } = await pool.query('DELETE FROM news_items WHERE id = $1', [id]);
+    if (!rowCount) return res.status(404).json({ error: 'Berita tidak ditemukan' });
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('delete news failed', err);
+    res.status(500).json({ error: 'Gagal menghapus berita' });
+  }
+});
+
 // ---- Trades -----------------------------------------------------------------
 // Every field except date and instrument is optional, so a quick entry can be
 // completed later. Derived numbers (risk %, R, RR, discipline) are computed in
@@ -122,6 +239,8 @@ const CATEGORIES = ['forex', 'saham', 'kripto'];
 const POSITIONS = ['buy', 'sell'];
 const EMOTIONS = ['tenang', 'fomo', 'takut', 'serakah', 'balas_dendam', 'ragu', 'bosan'];
 const MISTAKES = ['entry_terlalu_cepat', 'sl_digeser', 'tp_dipotong', 'overtrade', 'melanggar_risiko', 'tanpa_setup'];
+// Pre-trade checklist steps, same values as the form's checkboxes.
+const CHECKLIST = ['setup', 'risk', 'rr', 'sl', 'day'];
 const NUMERIC_FIELDS = ['entry_price', 'stop_loss', 'take_profit', 'exit_price', 'lot_size', 'capital', 'risk_amount', 'result_amount'];
 const TEXT_FIELDS = { instrument: 40, setup: 200, timeframe: 20, entry_reason: 2000, lesson: 2000 };
 
@@ -129,13 +248,30 @@ const TRADE_COLUMNS = `id, to_char(trade_date, 'YYYY-MM-DD') AS trade_date,
   to_char(entry_time, 'HH24:MI') AS entry_time, to_char(exit_time, 'HH24:MI') AS exit_time,
   instrument, category, position, entry_price, stop_loss, take_profit, exit_price,
   lot_size, capital, risk_amount, setup, timeframe, entry_reason, emotion,
-  followed_plan, mistakes, lesson, result_amount, created_at`;
+  followed_plan, mistakes, checklist, lesson, result_amount, account_id, screenshot_url, screenshot_id,
+  created_at`;
 
 function cleanNumber(v) {
   if (v === null || v === undefined || v === '') return null;
   const n = typeof v === 'number' ? v : Number(String(v).trim().replace(',', '.'));
   if (!Number.isFinite(n) || Math.abs(n) >= 1e12) throw new Error('Angka tidak valid');
   return n;
+}
+
+function cleanId(v) {
+  if (v === null || v === undefined || v === '') return null;
+  const n = typeof v === 'number' ? v : Number(String(v).trim());
+  return Number.isInteger(n) && n > 0 ? n : null;
+}
+
+// Screenshot uploads live in the platform's file storage; the trade carries
+// only the returned URL (never image bytes). Accept https/http and the
+// platform's own relative /app-files/ shape, capped in length.
+function cleanShotUrl(v) {
+  if (typeof v !== 'string') return null;
+  const s = v.trim();
+  if (!s || s.length > 512 || /\s/.test(s)) return null;
+  return /^(https?:\/\/|\/)/.test(s) ? s : null;
 }
 
 function cleanTrade(body) {
@@ -162,28 +298,54 @@ function cleanTrade(body) {
   t.emotion = EMOTIONS.includes(b.emotion) ? b.emotion : null;
   t.followed_plan = typeof b.followed_plan === 'boolean' ? b.followed_plan : null;
   t.mistakes = Array.isArray(b.mistakes) ? MISTAKES.filter(m => b.mistakes.includes(m)) : [];
+  t.checklist = Array.isArray(b.checklist) ? CHECKLIST.filter(c => b.checklist.includes(c)) : [];
   for (const key of NUMERIC_FIELDS) t[key] = cleanNumber(b[key]);
+  // A trade can point at one of the user's own accounts; the handlers verify
+  // ownership against the accounts table before anything is written.
+  t.account_id = cleanId(b.account_id);
+  t.screenshot_url = cleanShotUrl(b.screenshot_url);
+  t.screenshot_id = typeof b.screenshot_id === 'string' && b.screenshot_id.length <= 64
+    ? b.screenshot_id.trim() || null : null;
   return t;
 }
 
 const WRITE_FIELDS = ['trade_date', 'entry_time', 'exit_time', 'instrument', 'category', 'position',
-  ...NUMERIC_FIELDS, 'setup', 'timeframe', 'entry_reason', 'emotion', 'followed_plan', 'mistakes', 'lesson'];
+  ...NUMERIC_FIELDS, 'setup', 'timeframe', 'entry_reason', 'emotion', 'followed_plan', 'mistakes', 'checklist', 'lesson',
+  'account_id', 'screenshot_url', 'screenshot_id'];
 
 // Read-only demo trades for staging previews (?demo=1). Never written to the
-// database and never attributed to the visitor.
+// database and never attributed to the visitor. The last row is dated "today"
+// at load time so features keyed on the current day (the daily-loss alert,
+// today's calendar cell) are visible in a preview.
+const demoToday = new Date().toISOString().slice(0, 10);
 const DEMO_TRADES = [
   { id: -1, trade_date: '2026-09-29', entry_time: '14:05', exit_time: '16:40', instrument: 'EURUSD', category: 'forex', position: 'buy',
     entry_price: '1.0850', stop_loss: '1.0830', take_profit: '1.0900', exit_price: '1.0900', lot_size: '0.1', capital: '2500',
     risk_amount: null, setup: 'Staging demo: breakout', timeframe: 'H1', entry_reason: 'Staging demo trade, retest support', emotion: 'tenang',
-    followed_plan: true, mistakes: [], lesson: 'Staging demo: sabar menunggu retest', result_amount: '50', demo: true },
+    followed_plan: true, mistakes: [], lesson: 'Staging demo: sabar menunggu retest', result_amount: '50', account_id: -1, demo: true },
   { id: -2, trade_date: '2026-09-30', entry_time: '09:15', exit_time: '09:50', instrument: 'BBCA', category: 'saham', position: 'buy',
     entry_price: '9500', stop_loss: '9300', take_profit: '9800', exit_price: '9350', lot_size: '10', capital: '15000',
     risk_amount: '200', setup: 'Staging demo: pullback', timeframe: 'M15', entry_reason: 'Staging demo trade', emotion: 'fomo',
-    followed_plan: false, mistakes: ['entry_terlalu_cepat', 'melanggar_risiko'], lesson: 'Staging demo: jangan kejar harga', result_amount: '-150', demo: true },
+    followed_plan: false, mistakes: ['entry_terlalu_cepat', 'melanggar_risiko'], lesson: 'Staging demo: jangan kejar harga', result_amount: '-150', account_id: -2, demo: true },
   { id: -3, trade_date: '2026-10-01', entry_time: '20:00', exit_time: null, instrument: 'BTCUSDT', category: 'kripto', position: 'sell',
     entry_price: '62000', stop_loss: null, take_profit: '60000', exit_price: null, lot_size: '0.01', capital: '2000',
     risk_amount: null, setup: null, timeframe: 'H4', entry_reason: null, emotion: 'ragu',
-    followed_plan: null, mistakes: ['tanpa_setup'], lesson: null, result_amount: null, demo: true },
+    followed_plan: null, mistakes: ['tanpa_setup'], lesson: null, result_amount: null, account_id: null, demo: true },
+  { id: -4, trade_date: demoToday, entry_time: '21:10', exit_time: '21:40', instrument: 'XAUUSD', category: 'forex', position: 'sell',
+    entry_price: '2650', stop_loss: '2655', take_profit: '2630', exit_price: '2660', lot_size: '0.1', capital: '2500',
+    risk_amount: null, setup: 'Staging demo: fade berita', timeframe: 'M5', entry_reason: 'Staging demo trade lewat batas rugi', emotion: 'balas_dendam',
+    followed_plan: false, mistakes: ['melanggar_risiko'], lesson: 'Staging demo: berhenti setelah batas rugi harian',
+    result_amount: '-60', account_id: -1, demo: true },
+];
+
+// Read-only demo accounts for staging previews (?demo=1), matched to the demo
+// trades above. Never written to the database and never attributed to the
+// visitor.
+const DEMO_ACCOUNTS = [
+  { id: -1, name: 'Staging demo: Akun forex', starting_balance: '2500', daily_loss_limit: '50',
+    market_limits: { forex: 1, kripto: 2 }, demo: true },
+  { id: -2, name: 'Staging demo: Akun saham', starting_balance: '15000', daily_loss_limit: '300',
+    market_limits: {}, demo: true },
 ];
 
 app.get('/api/trades', async (req, res) => {
@@ -210,6 +372,7 @@ app.post('/api/trades', async (req, res) => {
   let t;
   try { t = cleanTrade(req.body); } catch (err) { return res.status(400).json({ error: err.message }); }
   try {
+    t.account_id = await ownAccountId(req.user.id, t.account_id);
     const vals = [req.user.id, req.user.username, ...WRITE_FIELDS.map(f => t[f])];
     const { rows } = await pool.query(`${insertSql([])} RETURNING ${TRADE_COLUMNS}`, vals);
     res.status(201).json({ trade: rows[0] });
@@ -335,6 +498,7 @@ app.put('/api/trades/:id', async (req, res) => {
   let t;
   try { t = cleanTrade(req.body); } catch (err) { return res.status(400).json({ error: err.message }); }
   try {
+    t.account_id = await ownAccountId(req.user.id, t.account_id);
     const sets = WRITE_FIELDS.map((f, i) => `${f} = $${i + 3}`).join(', ');
     const { rows } = await pool.query(
       `UPDATE trades SET ${sets}, updated_at = NOW() WHERE id = $1 AND user_id = $2 RETURNING ${TRADE_COLUMNS}`,
@@ -362,6 +526,107 @@ app.delete('/api/trades/:id', async (req, res) => {
 });
 
 app.use(express.static(path.join(__dirname, 'public')));
+
+// ---- Accounts and risk limits -----------------------------------------------
+// Each user can keep several trading accounts, each with a starting balance,
+// an optional daily loss limit and optional per-market risk limits (% of
+// capital per trade). Rows carry capital figures, so the table is private.
+// Returns the id when it belongs to the user, else null (a trade never
+// depends on another user's account row).
+async function ownAccountId(userId, id) {
+  if (id === null || id === undefined) return null;
+  const { rows } = await pool.query('SELECT 1 FROM accounts WHERE id = $1 AND user_id = $2', [id, userId]);
+  return rows.length ? id : null;
+}
+
+function cleanMarketLimits(v) {
+  const out = {};
+  if (v && typeof v === 'object' && !Array.isArray(v)) {
+    for (const c of CATEGORIES) {
+      const n = Number(v[c]);
+      if (Number.isFinite(n) && n > 0 && n <= 100) out[c] = n;
+    }
+  }
+  return out;
+}
+
+function cleanAccount(body) {
+  const b = body || {};
+  const name = typeof b.name === 'string' ? b.name.trim().slice(0, 60) : '';
+  if (!name) throw new Error('Nama akun wajib diisi');
+  return {
+    name,
+    starting_balance: cleanNumber(b.starting_balance),
+    daily_loss_limit: cleanNumber(b.daily_loss_limit),
+    market_limits: cleanMarketLimits(b.market_limits),
+  };
+}
+
+app.get('/api/accounts', async (req, res) => {
+  if (IS_STAGING && req.query.demo === '1') return res.json({ accounts: DEMO_ACCOUNTS, demo: true });
+  try {
+    const { rows } = await pool.query(
+      `SELECT id, name, starting_balance, daily_loss_limit, market_limits, created_at
+       FROM accounts WHERE user_id = $1 ORDER BY id`,
+      [req.user.id]
+    );
+    res.json({ accounts: rows });
+  } catch (err) {
+    console.error('list accounts failed', err);
+    res.status(500).json({ error: 'Gagal memuat akun' });
+  }
+});
+
+app.post('/api/accounts', async (req, res) => {
+  let a;
+  try { a = cleanAccount(req.body); } catch (err) { return res.status(400).json({ error: err.message }); }
+  try {
+    const { rows } = await pool.query(
+      `INSERT INTO accounts (user_id, name, starting_balance, daily_loss_limit, market_limits)
+       VALUES ($1, $2, $3, $4, $5) RETURNING id, name, starting_balance, daily_loss_limit, market_limits, created_at`,
+      [req.user.id, a.name, a.starting_balance, a.daily_loss_limit, a.market_limits]
+    );
+    res.status(201).json({ account: rows[0] });
+  } catch (err) {
+    console.error('create account failed', err);
+    res.status(500).json({ error: 'Gagal menyimpan akun' });
+  }
+});
+
+app.put('/api/accounts/:id', async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) return res.status(404).json({ error: 'Akun tidak ditemukan' });
+  let a;
+  try { a = cleanAccount(req.body); } catch (err) { return res.status(400).json({ error: err.message }); }
+  try {
+    const { rows } = await pool.query(
+      `UPDATE accounts SET name = $3, starting_balance = $4, daily_loss_limit = $5, market_limits = $6
+       WHERE id = $1 AND user_id = $2
+       RETURNING id, name, starting_balance, daily_loss_limit, market_limits, created_at`,
+      [id, req.user.id, a.name, a.starting_balance, a.daily_loss_limit, a.market_limits]
+    );
+    if (!rows.length) return res.status(404).json({ error: 'Akun tidak ditemukan' });
+    res.json({ account: rows[0] });
+  } catch (err) {
+    console.error('update account failed', err);
+    res.status(500).json({ error: 'Gagal menyimpan akun' });
+  }
+});
+
+app.delete('/api/accounts/:id', async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) return res.status(404).json({ error: 'Akun tidak ditemukan' });
+  try {
+    const { rowCount } = await pool.query('DELETE FROM accounts WHERE id = $1 AND user_id = $2', [id, req.user.id]);
+    if (!rowCount) return res.status(404).json({ error: 'Akun tidak ditemukan' });
+    // Trades keep existing; they just lose the account link.
+    await pool.query('UPDATE trades SET account_id = NULL WHERE user_id = $1 AND account_id = $2', [req.user.id, id]);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('delete account failed', err);
+    res.status(500).json({ error: 'Gagal menghapus akun' });
+  }
+});
 
 // HTML shell: serve the app if authenticated. Unauthenticated top-level
 // visits (share links pasted into a browser — Sec-Fetch-Dest: document)
@@ -435,9 +700,13 @@ async function start() {
       ADD COLUMN IF NOT EXISTS emotion VARCHAR(20),
       ADD COLUMN IF NOT EXISTS followed_plan BOOLEAN,
       ADD COLUMN IF NOT EXISTS mistakes TEXT[] NOT NULL DEFAULT '{}',
+      ADD COLUMN IF NOT EXISTS checklist TEXT[] NOT NULL DEFAULT '{}',
       ADD COLUMN IF NOT EXISTS lesson TEXT,
       ADD COLUMN IF NOT EXISTS result_amount NUMERIC,
-      ADD COLUMN IF NOT EXISTS broker_ref VARCHAR(100)
+      ADD COLUMN IF NOT EXISTS broker_ref VARCHAR(100),
+      ADD COLUMN IF NOT EXISTS account_id INTEGER,
+      ADD COLUMN IF NOT EXISTS screenshot_url TEXT,
+      ADD COLUMN IF NOT EXISTS screenshot_id VARCHAR(64)
   `);
   // broker_ref is the broker's ticket for imported trades; one ticket is
   // imported at most once per user.
@@ -445,6 +714,71 @@ async function start() {
     ON trades (user_id, broker_ref) WHERE broker_ref IS NOT NULL`);
   await pool.query(`CREATE INDEX IF NOT EXISTS trades_user_date_idx ON trades (user_id, trade_date DESC)`);
   await pool.query(`COMMENT ON TABLE trades IS 'staging:private'`);
+
+  // Multiple accounts per user, each with a starting balance, an optional
+  // daily loss limit and optional per-market risk limits (JSONB, a
+  // category -> % of capital map). Holds capital figures: private.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS accounts (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL,
+      name VARCHAR(100) NOT NULL,
+      starting_balance NUMERIC,
+      daily_loss_limit NUMERIC,
+      market_limits JSONB NOT NULL DEFAULT '{}',
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      updated_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+  await pool.query(`CREATE INDEX IF NOT EXISTS accounts_user_idx ON accounts (user_id, id)`);
+  await pool.query(`COMMENT ON TABLE accounts IS 'staging:private'`);
+
+  // Per-user UI language. Public by default (only a preference code, no
+  // personal content), so staging previews can seed a demo row.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS user_prefs (
+      user_id INTEGER PRIMARY KEY,
+      language VARCHAR(10) NOT NULL DEFAULT 'id',
+      updated_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+
+  // Shared market news (admin-curated). Public: content is the same for
+  // every user and carries no personal data, so staging copies the rows and
+  // preview seeds below just top it up.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS news_items (
+      id SERIAL PRIMARY KEY,
+      title VARCHAR(200) NOT NULL,
+      summary TEXT,
+      category VARCHAR(20),
+      symbols TEXT[] NOT NULL DEFAULT '{}',
+      sentiment VARCHAR(10),
+      importance VARCHAR(10),
+      event_date DATE NOT NULL DEFAULT CURRENT_DATE,
+      event_time TIME,
+      source_url TEXT,
+      created_by VARCHAR(255),
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      updated_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+  await pool.query(`CREATE INDEX IF NOT EXISTS news_items_event_date_idx ON news_items (event_date DESC)`);
+
+  if (IS_STAGING) {
+    // Demo news for staging previews: obviously fake, fixed ids, idempotent.
+    // Row 900003 matches the demo BBCA trade (2026-09-30) so the journal's
+    // news marker is visible without extra seeding.
+    await pool.query(`
+      INSERT INTO news_items (id, title, summary, category, symbols, sentiment, importance, event_date, event_time, source_url, created_by)
+      VALUES
+        (900001, 'Staging demo: NFP AS melebihi perkiraan', 'Staging demo: rilis ketenagakerjaan AS di atas perkiraan pasar, dolar menguat.', 'ekonomi', '{EURUSD,XAUUSD}', 'bearish', 'tinggi', '2026-09-29', '20:30', NULL, 'staging-demo-user'),
+        (900002, 'Staging demo: The Fed tahan suku bunga', 'Staging demo: bank sentris AS menahan suku bunga pada level saat ini.', 'ekonomi', '{EURUSD}', 'bullish', 'sedang', '2026-09-30', '02:00', NULL, 'staging-demo-user'),
+        (900003, 'Staging demo: BBCA laba kuartal naik', 'Staging demo: laba kuartalan BBCA naik dibanding tahun lalu.', 'saham', '{BBCA}', 'bullish', 'tinggi', '2026-09-30', NULL, NULL, 'staging-demo-user'),
+        (900004, 'Staging demo: bitcoin koreksi pasca rilis CPI', 'Staging demo: harga bitcoin turun setelah rilis inflasi AS lebih tinggi dari perkiraan.', 'kripto', '{BTCUSDT}', 'bearish', 'sedang', '2026-10-01', NULL, NULL, 'staging-demo-user')
+      ON CONFLICT (id) DO NOTHING
+    `);
+  }
 
   server = app.listen(port, () => console.log(`Listening on :${port}`));
   // Let Envoy retire idle upstream connections at 60s, with a 15s margin.
