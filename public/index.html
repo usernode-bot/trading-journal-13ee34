@@ -855,12 +855,93 @@
         <div id="contact-card-payment"></div>
       </div>
     </section>
+
+    <!-- Tab Profil: identitas pengguna (avatar, nama tampilan, @username),
+         statistik jurnal, edit profil dan preferensi. Statistik selalu dihitung
+         dari trade yang ada, tidak ada angka yang disimpan di sini. -->
+    <section id="profile-view" class="hidden w-full max-w-2xl mx-auto flex flex-col gap-4">
+      <div class="px-1">
+        <h1 data-i18n="pr_title" class="text-xl font-bold">Profil</h1>
+        <p data-i18n="pr_note" class="text-sm text-muted">Identitasmu, statistik jurnal dan preferensi. Nama pengguna adalah identitas akunmu di platform dan tidak bisa diubah.</p>
+      </div>
+      <p id="profile-demo-note" data-i18n="l_demo_note" class="hidden px-1 text-sm text-warn">Contoh data staging. Trade ini tidak tersimpan dan tidak bisa diubah.</p>
+
+      <!-- Kartu identitas -->
+      <section class="rounded-xl border border-line p-4 flex items-center gap-4" aria-labelledby="profile-id-title">
+        <div id="profile-avatar" class="flex h-20 w-20 shrink-0 select-none items-center justify-center overflow-hidden rounded-full border border-line bg-accent/15 text-2xl font-bold text-accent" aria-hidden="true">?</div>
+        <div class="min-w-0 flex flex-col gap-1">
+          <h2 id="profile-id-title" data-i18n="pr_ident" class="text-sm font-semibold text-muted">Identitas</h2>
+          <p id="profile-name" class="break-words text-lg font-bold">-</p>
+          <p id="profile-username" class="truncate text-sm text-muted-2"></p>
+          <p id="profile-since" class="text-xs text-muted-2"></p>
+        </div>
+      </section>
+
+      <!-- Statistik jurnal: dihitung dari trade yang dimuat, persis seperti
+           kartu Ringkasan di Jurnal -->
+      <section class="rounded-xl border border-line p-4 flex flex-col gap-3" aria-labelledby="profile-stats-title">
+        <h2 id="profile-stats-title" data-i18n="pr_stats" class="text-sm font-semibold text-muted">Statistik jurnal</h2>
+        <dl class="grid grid-cols-2 gap-x-4 gap-y-3">
+          <div><dt data-i18n="s_total" class="text-xs text-muted-2">Total trade</dt><dd id="pr-total" class="font-mono text-lg">-</dd></div>
+          <div><dt data-i18n="s_winrate" class="text-xs text-muted-2">Win rate</dt><dd id="pr-winrate" class="font-mono text-lg">-</dd><dd id="pr-winrate-sub" class="text-xs text-muted-2"></dd></div>
+          <div><dt data-i18n="s_pl" class="text-xs text-muted-2">Total profit/loss</dt><dd id="pr-pl" class="font-mono text-lg">-</dd></div>
+          <div><dt data-i18n="pr_disc" class="text-xs text-muted-2">Tingkat disiplin</dt><dd id="pr-disc" class="font-mono text-lg">-</dd><dd id="pr-disc-sub" class="text-xs text-muted-2"></dd></div>
+        </dl>
+        <p id="profile-stats-note" data-i18n="pr_stats_note" class="hidden text-xs text-muted-2">Belum ada trade. Catat trade pertamamu dan statistik akan muncul di sini.</p>
+      </section>
+
+      <!-- Edit profil: semua field opsional. Demo staging menonaktifkan
+           fieldset ini, seperti trade dan akun demo tidak bisa diubah. -->
+      <form id="profile-form" novalidate class="flex flex-col gap-3 rounded-xl border border-line p-4">
+        <h2 data-i18n="pr_edit" class="text-sm font-semibold text-muted">Edit profil</h2>
+        <p id="profile-error" class="hidden text-sm text-sell" role="alert"></p>
+        <p id="profile-ok" class="hidden text-sm text-buy" role="status"></p>
+        <fieldset id="profile-fields" class="flex flex-col gap-3">
+          <div class="flex flex-col gap-1 text-sm">
+            <span class="text-ink-2" data-i18n="pr_avatar">Foto profil</span>
+            <input type="hidden" name="avatar_url">
+            <input type="hidden" name="avatar_id">
+            <div class="flex flex-wrap items-center gap-2">
+              <label class="choice w-auto cursor-pointer justify-center focus-within:ring-2 focus-within:ring-accent">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg>
+                <span data-i18n="f_shot_pick">Pilih file</span>
+                <input id="avatar-input" type="file" accept="image/png,image/jpeg,image/webp,image/gif" class="sr-only">
+              </label>
+              <button type="button" id="avatar-remove" data-i18n="f_shot_remove" class="hidden rounded-lg border border-line-2 px-3 py-2 text-sm text-ink hover:bg-surface-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent">Hapus gambar</button>
+            </div>
+            <input id="avatar-url" type="url" maxlength="500" data-i18n-ph="f_shot_ph" placeholder="atau tempel URL gambar" class="field">
+            <p id="avatar-status" class="hidden text-xs text-warn" role="status"></p>
+          </div>
+          <label class="flex flex-col gap-1 text-sm"><span class="text-ink-2" data-i18n="pr_name">Nama tampilan</span>
+            <input name="display_name" type="text" maxlength="60" data-i18n-ph="pr_name_ph" placeholder="Opsional, misal nama panggilan" class="field"></label>
+          <label class="flex flex-col gap-1 text-sm"><span class="text-ink-2" data-i18n="pr_email">Email</span>
+            <input name="email" type="email" maxlength="120" autocomplete="email" inputmode="email" class="field"></label>
+          <label class="flex flex-col gap-1 text-sm"><span class="text-ink-2" data-i18n="vip_wa">Nomor WhatsApp</span>
+            <input name="whatsapp" type="tel" maxlength="20" autocomplete="tel" inputmode="tel" data-i18n-ph="vip_wa_ph" placeholder="0812xxxxxxx atau +62812xxxxxxx" class="field"></label>
+          <div class="flex sm:justify-end">
+            <button type="submit" id="profile-save-btn" data-i18n="pr_save" class="rounded-lg bg-accent hover:bg-accent-hover px-5 py-2.5 text-sm font-semibold text-on-accent disabled:opacity-60 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent">Simpan profil</button>
+          </div>
+        </fieldset>
+      </form>
+
+      <!-- Preferensi: bahasa (disinkronkan dengan pemilih di header) dan
+           pintasan ke halaman yang sudah ada -->
+      <section class="flex flex-col gap-3 rounded-xl border border-line p-4" aria-labelledby="profile-pref-title">
+        <h2 id="profile-pref-title" data-i18n="pr_pref" class="text-sm font-semibold text-muted">Preferensi</h2>
+        <label class="flex flex-col gap-1 text-sm"><span class="text-ink-2" data-i18n="lang">Bahasa</span>
+          <select id="profile-lang" class="field" aria-label="Bahasa"></select></label>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <a href="#/akun" data-i18n="acc_title" class="rounded-lg border border-line-2 px-4 py-2.5 text-center text-sm text-ink hover:bg-surface-2 no-underline focus:outline-none focus-visible:ring-2 focus-visible:ring-accent">Akun &amp; batas risiko</a>
+          <a href="#/vip" data-i18n="pr_open_vip" class="rounded-lg border border-line-2 px-4 py-2.5 text-center text-sm text-ink hover:bg-surface-2 no-underline focus:outline-none focus-visible:ring-2 focus-visible:ring-accent">Status VIP</a>
+        </div>
+      </section>
+    </section>
   </main>
 
   <!-- Disclaimer tetap + navigasi bawah, di semua halaman -->
   <div id="bottom-chrome" class="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-surface/95 backdrop-blur" style="padding-bottom: var(--un-safe-inset-bottom, env(safe-area-inset-bottom, 0px))">
     <footer data-i18n="foot" class="px-4 py-1.5 text-center text-[11px] leading-snug text-muted-2">Trading berisiko tinggi dan dapat menyebabkan kehilangan modal. Sinyal bukan nasihat keuangan dan tidak ada jaminan profit. Gunakan hanya dana yang siap hilang.</footer>
-    <nav class="mx-auto grid max-w-5xl grid-cols-5" data-i18n-aria="nav_aria" aria-label="Menu utama">
+    <nav class="mx-auto grid max-w-5xl grid-cols-6" data-i18n-aria="nav_aria" aria-label="Menu utama">
       <a href="#/jurnal" id="tab-jurnal" class="tab-btn" aria-current="page">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h4"/></svg>
         <span data-i18n="nav_jurnal">Jurnal</span></a>
@@ -876,6 +957,9 @@
       <a href="#/vip" id="tab-vip" class="tab-btn">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg>
         <span data-i18n="nav_vip">VIP</span></a>
+      <a href="#/profil" id="tab-profil" class="tab-btn">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+        <span data-i18n="nav_profil">Profil</span></a>
     </nav>
   </div>
 
@@ -925,6 +1009,10 @@
       'Nama akun wajib diisi': 'e_acc_name',
       'Gagal menyimpan akun': 'e_acc_fail',
       'Gagal menghapus akun': 'e_acc_del',
+      'Email tidak valid': 'pr_e_email',
+      'Nomor WhatsApp tidak valid': 'pr_e_wa',
+      'Gagal memuat profil': 'pr_e_load',
+      'Gagal menyimpan profil': 'pr_e_save',
     };
     function terr(msg) {
       if (msg && SERR[msg]) return tr(SERR[msg]);
@@ -964,6 +1052,7 @@
       updateLotCalc();
       renderAccountOptions();
       renderAccounts();
+      renderProfile();
       showListState(listState);   // keeps loading/error states intact
       if (listState === 'list' || listState === 'empty') renderList();
       if (!$('form-view').classList.contains('hidden')) {
@@ -980,6 +1069,7 @@
     function setLanguage(code, persist) {
       lang = I18N.T[code] ? code : I18N.DEFAULT_LANG;
       $('lang-select').value = lang;
+      $('profile-lang').value = lang;
       rerenderAll();
       if (persist) {
         try { localStorage.setItem(LANG_CACHE_KEY, lang); } catch {}
@@ -993,15 +1083,20 @@
       }
     }
     async function initLang() {
-      const select = $('lang-select');
-      for (const l of I18N.LANGS) {
-        const o = document.createElement('option');
-        o.value = l.code;
-        o.textContent = l.name;
-        select.appendChild(o);
+      // Header and Profil selectors carry the same options and stay in sync
+      // (setLanguage sets both); changing either persists the choice.
+      for (const id of ['lang-select', 'profile-lang']) {
+        const select = $(id);
+        for (const l of I18N.LANGS) {
+          const o = document.createElement('option');
+          o.value = l.code;
+          o.textContent = l.name;
+          select.appendChild(o);
+        }
+        select.setAttribute('aria-label', tr('lang'));
       }
-      select.setAttribute('aria-label', tr('lang'));
-      select.addEventListener('change', () => setLanguage(select.value, true));
+      $('lang-select').addEventListener('change', () => setLanguage($('lang-select').value, true));
+      $('profile-lang').addEventListener('change', () => setLanguage($('profile-lang').value, true));
       if (LANG_PARAM) { setLanguage(I18N.T[LANG_PARAM] ? LANG_PARAM : I18N.DEFAULT_LANG, false); return; }
       let saved = null;
       try { saved = localStorage.getItem(LANG_CACHE_KEY); } catch {}
@@ -2234,12 +2329,12 @@
     }
 
     // ---- Tab dan navigasi bawah ---------------------------------------------
-    // Hash routes (#/jurnal, #/berita, #/broker, #/sinyal, #/vip) so a tab can be
-    // shared and reopened. The Jurnal tab keeps its own sub-view (list/form/import),
-    // plus two deep-linkable sub-routes of its own: #/cepat (catat cepat) and
-    // #/akun (akun & batas risiko).
-    const TABS = ['jurnal', 'berita', 'broker', 'sinyal', 'vip'];
-    const TAB_VIEWS = { jurnal: 'jurnal-view', berita: 'news-view', broker: 'broker-view', sinyal: 'signals-view', vip: 'vip-view' };
+    // Hash routes (#/jurnal, #/berita, #/broker, #/sinyal, #/vip, #/profil) so a
+    // tab can be shared and reopened. The Jurnal tab keeps its own sub-view
+    // (list/form/import), plus two deep-linkable sub-routes of its own:
+    // #/cepat (catat cepat) and #/akun (akun & batas risiko).
+    const TABS = ['jurnal', 'berita', 'broker', 'sinyal', 'vip', 'profil'];
+    const TAB_VIEWS = { jurnal: 'jurnal-view', berita: 'news-view', broker: 'broker-view', sinyal: 'signals-view', vip: 'vip-view', profil: 'profile-view' };
     const SUB_ROUTES = { cepat: 'quick', akun: 'accounts' };
     function currentTab() {
       const m = /^#\/([a-z]+)/.exec(location.hash);
@@ -3185,9 +3280,177 @@
       }
     });
 
+    // ---- Profil --------------------------------------------------------------
+    // Identity card + journal stats + editable profile. The platform only
+    // tells us who the user is (username); everything else is their own
+    // content from /api/profile. Stats are always computed live from the
+    // loaded trades with the journal's own summarize()/calc() — nothing is
+    // stored or recomputed separately.
+    const profileForm = $('profile-form');
+    let profile = null;
+
+    function showProfileError(msg) {
+      $('profile-error').textContent = msg;
+      $('profile-error').classList.remove('hidden');
+    }
+
+    // Avatar bubble: the uploaded image when there is one, otherwise the
+    // first letter of the display name (or username) on an accent circle.
+    function renderAvatar(url) {
+      const el = $('profile-avatar');
+      if (url) {
+        el.innerHTML = '<img src="' + esc(url) + '" alt="" class="h-20 w-20 object-cover">';
+        return;
+      }
+      const pr = profile || {};
+      const base = pr.display_name || pr.username || '';
+      el.textContent = base.slice(0, 1).toUpperCase() || '?';
+    }
+
+    function setAvatar(url, id) {
+      profileForm.elements.avatar_url.value = url || '';
+      profileForm.elements.avatar_id.value = id || '';
+      $('avatar-url').value = url && /^https?:/i.test(url) ? url : '';
+      $('avatar-remove').classList.toggle('hidden', !url && !id);
+      renderAvatar(url);
+    }
+
+    function avatarStatus(msg) {
+      const el = $('avatar-status');
+      if (!msg) { el.classList.add('hidden'); return; }
+      el.textContent = msg;
+      el.classList.remove('hidden');
+    }
+
+    function fillProfileForm() {
+      const pr = profile || {};
+      profileForm.elements.display_name.value = pr.display_name || '';
+      profileForm.elements.email.value = pr.email || '';
+      profileForm.elements.whatsapp.value = pr.whatsapp || '';
+      setAvatar(pr.avatar_url || '', pr.avatar_id || '');
+    }
+
+    function renderProfile() {
+      const pr = profile || {};
+      const name = pr.display_name || pr.username || '';
+      $('profile-name').textContent = name || '-';
+      $('profile-username').textContent = pr.username ? '@' + pr.username : '';
+      $('profile-since').textContent = pr.member_since ? tr('pr_since', { n: fmtDate(pr.member_since) }) : '';
+      renderAvatar(pr.avatar_url);
+      // Stats: live from the journal's own summarize(); the discipline rate
+      // counts only trades the badge can judge (same rules as the list).
+      const s = summarize(trades);
+      $('pr-total').textContent = s.total ? String(s.total) : '-';
+      $('pr-winrate').textContent = fmtPct(s.winRate);
+      $('pr-winrate-sub').textContent = s.withResult ? tr('s_win_sub', { n: s.wins, m: s.withResult }) : '';
+      $('pr-pl').textContent = fmtMoney(s.totalPL);
+      $('pr-pl').className = 'font-mono text-lg ' + resultClass(s.totalPL);
+      let known = 0, good = 0;
+      for (const t of trades) {
+        const c = calc(t);
+        if (c.status === 'unknown') continue;
+        known++;
+        if (c.status === 'ok') good++;
+      }
+      $('pr-disc').textContent = fmtPct(known ? good / known * 100 : null);
+      $('pr-disc-sub').textContent = known ? tr('pr_disc_sub', { n: known }) : '';
+      $('profile-stats-note').classList.toggle('hidden', trades.length > 0);
+    }
+
+    async function loadProfile() {
+      try {
+        const res = await fetch('/api/profile' + (DEMO ? '?demo=1' : ''), { headers });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        profile = data.profile || null;
+        // Demo profile is read-only, like demo trades and accounts.
+        $('profile-fields').disabled = !!data.demo;
+        $('profile-demo-note').classList.toggle('hidden', !data.demo);
+      } catch (err) {
+        console.warn('load profile failed', err.message);
+        profile = null;
+        $('profile-fields').disabled = false;
+      }
+      fillProfileForm();
+      renderProfile();
+    }
+
+    // Avatar upload mirrors the trade screenshot: the bridge stores the file
+    // in the platform's storage and only the URL is kept. Outside the
+    // platform the paste-URL field is the fallback.
+    $('avatar-input').addEventListener('change', async () => {
+      const file = $('avatar-input').files && $('avatar-input').files[0];
+      if (!file) return;
+      if (file.size > 5 * 1024 * 1024) { avatarStatus(tr('f_shot_big')); return; }
+      if (!window.usernode || !window.usernode.uploadFile) { avatarStatus(tr('f_shot_nobridge')); return; }
+      avatarStatus(tr('f_shot_uploading'));
+      try {
+        const stored = await window.usernode.uploadFile(file, { visibility: 'public' });
+        setAvatar(stored.url, stored.id);
+        avatarStatus('');
+      } catch {
+        avatarStatus(tr('f_shot_fail'));
+      }
+    });
+    $('avatar-url').addEventListener('input', () => {
+      const v = $('avatar-url').value.trim();
+      setAvatar(v, profileForm.elements.avatar_id.value);
+    });
+    $('avatar-remove').addEventListener('click', () => {
+      const id = profileForm.elements.avatar_id.value;
+      if (id && window.usernode && window.usernode.deleteFile) window.usernode.deleteFile(id).catch(() => {});
+      $('avatar-input').value = '';
+      setAvatar('', '');
+      avatarStatus('');
+    });
+
+    let profileOkTimer = null;
+    profileForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (DEMO || $('profile-fields').disabled) return;
+      const fd = new FormData(profileForm);
+      const body = {
+        display_name: (fd.get('display_name') || '').toString().trim(),
+        email: (fd.get('email') || '').toString().trim(),
+        whatsapp: (fd.get('whatsapp') || '').toString().trim(),
+        avatar_url: (fd.get('avatar_url') || '').toString().trim(),
+        avatar_id: (fd.get('avatar_id') || '').toString(),
+      };
+      // Client checks mirror the server's cleanProfile(); the WhatsApp
+      // normaliser is the VIP form's.
+      if (body.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.email)) return showProfileError(tr('pr_e_email'));
+      if (body.whatsapp && !normalizeWa(body.whatsapp)) return showProfileError(tr('pr_e_wa'));
+      $('profile-save-btn').disabled = true;
+      try {
+        const res = await fetch('/api/profile', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', ...headers },
+          body: JSON.stringify(body),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) return showProfileError(terr(data.error || tr('pr_e_save')) + '. ' + tr('e_retry'));
+        $('profile-error').classList.add('hidden');
+        await loadProfile();
+        const ok = $('profile-ok');
+        ok.textContent = tr('pr_saved');
+        ok.classList.remove('hidden');
+        clearTimeout(profileOkTimer);
+        profileOkTimer = setTimeout(() => ok.classList.add('hidden'), 3000);
+      } catch {
+        showProfileError(tr('pr_e_save'));
+      } finally {
+        $('profile-save-btn').disabled = false;
+      }
+    });
+    profileForm.addEventListener('input', (e) => {
+      if (e.target === profileForm.elements.display_name || e.target === profileForm.elements.email
+        || e.target === profileForm.elements.whatsapp) $('profile-error').classList.add('hidden');
+    });
+
     loadTrades();
     loadNews();
     loadAccounts();
+    loadProfile();
     // Must run after every `let` above is initialised: it calls rerenderAll(),
     // which references the import state.
     initLang();

@@ -330,6 +330,38 @@
       "name": "Trade form has the account picker",
       "path": "/",
       "expectSelector": "#form-view select[name='account_id']"
+    },
+    {
+      "id": "profile.tab",
+      "name": "Bottom navigation shows the Profil tab",
+      "path": "/",
+      "expectSelector": "#tab-profil",
+      "visual": true,
+      "impact": [
+        "public/index.html",
+        "public/i18n.js",
+        "server.js"
+      ]
+    },
+    {
+      "name": "Profil page renders its edit form",
+      "path": "/#/profil",
+      "expectText": "Nama tampilan"
+    },
+    {
+      "name": "Profil tab is translated in English",
+      "path": "/?lang=en#/profil",
+      "expectText": "Profile"
+    },
+    {
+      "name": "Profil offers the accounts and VIP shortcuts",
+      "path": "/#/profil",
+      "expectText": "Akun & batas risiko"
+    },
+    {
+      "name": "Demo profile shows the staging demo identity",
+      "path": "/?demo=1#/profil",
+      "expectText": "Staging demo: Profil"
     }
   ],
   "visibility": {

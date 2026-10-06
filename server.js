@@ -143,6 +143,104 @@ app.put('/api/prefs', (req, res) => {
     .catch(() => res.status(500).json({ error: 'Gagal menyimpan preferensi' }));
 });
 
+// ---- Profil -----------------------------------------------------------------
+// The platform only tells the app who a user is (id + username). Everything
+// else on the profile page — display name, email, WhatsApp, avatar — is the
+// user's own content, stored here per user and edited via PUT. Personal
+// information, so the table is private. Derived numbers (stats, member
+// since) are computed, never stored.
+const DEMO_PROFILE = {
+  username: 'staging-demo-user',
+  display_name: 'Staging demo: Profil',
+  email: 'demo@staging.local',
+  whatsapp: null,
+  avatar_url: null,
+  avatar_id: null,
+  member_since: '2026-01-05',
+  demo: true,
+};
+
+function cleanProfile(body) {
+  const b = body || {};
+  const p = {};
+  const name = typeof b.display_name === 'string' ? b.display_name.trim().slice(0, 60) : '';
+  p.display_name = name || null;
+  const email = typeof b.email === 'string' ? b.email.trim().slice(0, 120) : '';
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error('Email tidak valid');
+  p.email = email || null;
+  const wa = typeof b.whatsapp === 'string' ? b.whatsapp.replace(/[\s.\-()]/g, '') : '';
+  if (!wa) p.whatsapp = null;
+  else {
+    const m = /^(\+?62|0)(8\d{7,12})$/.exec(wa);
+    if (!m) throw new Error('Nomor WhatsApp tidak valid');
+    p.whatsapp = '+62' + m[2];
+  }
+  p.avatar_url = cleanShotUrl(b.avatar_url);
+  p.avatar_id = typeof b.avatar_id === 'string' && b.avatar_id.length <= 64
+    ? b.avatar_id.trim() || null : null;
+  return p;
+}
+
+app.get('/api/profile', async (req, res) => {
+  if (IS_STAGING && req.query.demo === '1') return res.json({ profile: DEMO_PROFILE, demo: true });
+  try {
+    const [saved, firsts] = await Promise.all([
+      pool.query(
+        'SELECT display_name, email, whatsapp, avatar_url, avatar_id, created_at FROM user_profiles WHERE user_id = $1',
+        [req.user.id]
+      ),
+      pool.query(
+        `SELECT (SELECT MIN(created_at) FROM trades WHERE user_id = $1) AS first_trade,
+                (SELECT MIN(created_at) FROM accounts WHERE user_id = $1) AS first_account`,
+        [req.user.id]
+      ),
+    ]);
+    const row = saved.rows[0];
+    const first = firsts.rows[0] || {};
+    // "Sejak" is the earliest real activity: first trade or account, falling
+    // back to when the profile was first saved. Never an upsert on GET.
+    const candidates = [first.first_trade, first.first_account, row && row.created_at]
+      .filter(Boolean)
+      .map(d => d.getTime());
+    res.json({
+      profile: {
+        username: req.user.username,
+        display_name: row ? row.display_name : null,
+        email: row ? row.email : null,
+        whatsapp: row ? row.whatsapp : null,
+        avatar_url: row ? row.avatar_url : null,
+        avatar_id: row ? row.avatar_id : null,
+        member_since: candidates.length
+          ? new Date(Math.min(...candidates)).toISOString().slice(0, 10)
+          : null,
+      },
+    });
+  } catch (err) {
+    console.error('load profile failed', err);
+    res.status(500).json({ error: 'Gagal memuat profil' });
+  }
+});
+
+app.put('/api/profile', async (req, res) => {
+  if (IS_STAGING && req.query.demo === '1') return res.json({ profile: DEMO_PROFILE, demo: true });
+  let p;
+  try { p = cleanProfile(req.body); } catch (err) { return res.status(400).json({ error: err.message }); }
+  try {
+    await pool.query(
+      `INSERT INTO user_profiles (user_id, username, display_name, email, whatsapp, avatar_url, avatar_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       ON CONFLICT (user_id) DO UPDATE SET
+         username = $2, display_name = $3, email = $4, whatsapp = $5,
+         avatar_url = $6, avatar_id = $7, updated_at = NOW()`,
+      [req.user.id, req.user.username, p.display_name, p.email, p.whatsapp, p.avatar_url, p.avatar_id]
+    );
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('save profile failed', err);
+    res.status(500).json({ error: 'Gagal menyimpan profil' });
+  }
+});
+
 // ---- Berita pasar -------------------------------------------------------------
 // Shared, admin-curated market news (economic calendar items and headlines)
 // that can move the prices of the listed symbols. Public content: every
@@ -745,6 +843,24 @@ async function start() {
       updated_at TIMESTAMPTZ DEFAULT NOW()
     )
   `);
+
+  // One profile row per user: display name, contact details and the avatar
+  // (stored by URL in the platform's file storage, never bytes). Carries
+  // personal information, so staging previews get the schema without rows.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS user_profiles (
+      user_id INTEGER PRIMARY KEY,
+      username VARCHAR(255) NOT NULL,
+      display_name VARCHAR(60),
+      email VARCHAR(120),
+      whatsapp VARCHAR(20),
+      avatar_url TEXT,
+      avatar_id VARCHAR(64),
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      updated_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+  await pool.query(`COMMENT ON TABLE user_profiles IS 'staging:private'`);
 
   // Shared market news (admin-curated). Public: content is the same for
   // every user and carries no personal data, so staging copies the rows and
