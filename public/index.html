@@ -64,7 +64,14 @@
   })();
   </script>
   <title>Trading journal</title>
+  <!-- App icon set, all rendered from public/logo.svg (see brand/ICON.md).
+       Modern browsers pick the SVG; PNG sizes serve the manifest and older
+       browsers; favicon.ico is the last-resort fallback. -->
   <link rel="icon" type="image/svg+xml" href="/logo.svg">
+  <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/site.webmanifest">
   <!-- Sora with a system-ui fallback (tailwind.config.js fontFamily.sans). -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

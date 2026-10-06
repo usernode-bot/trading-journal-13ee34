@@ -1,4 +1,5 @@
 {
+  "icon": { "image": "brand/icon.png" },
   "secrets": [],
   "icon": {
     "image": "brand/icon.png"
@@ -179,6 +180,11 @@
       "name": "Disclaimer footer tampil",
       "path": "/",
       "expectText": "Trading berisiko tinggi"
+    },
+    {
+      "name": "Web manifest serves the app icons",
+      "path": "/site.webmanifest",
+      "expectText": "icon-512.png"
     },
     {
       "name": "Kalkulator lot tersedia di jurnal kosong",

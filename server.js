@@ -108,12 +108,9 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok' });
 });
 
-// The template ships no favicon file; index.html carries an inline SVG
-// icon instead. Answer 204 here so anything that still probes
-// /favicon.ico (older browsers, direct visits) doesn't fall through to
-// the auth-gated catch-all and surface a 401 in the console on every
-// fresh load.
-app.get('/favicon.ico', (_req, res) => res.status(204).end());
+// The app ships a real favicon now (public/favicon.ico, rendered from
+// public/logo.svg), so express.static answers /favicon.ico below. The old
+// 204 stub that kept the probe off the auth-gated catch-all is gone.
 
 const IS_STAGING = process.env.USERNODE_ENV === 'staging';
 
