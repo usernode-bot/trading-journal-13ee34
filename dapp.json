@@ -201,9 +201,19 @@
       "expectSelector": "#equity-chart g[data-pl='loss'] path.text-sell"
     },
     {
+      "name": "Grafik equity menggambar bayangan drawdown",
+      "path": "/?demo=1",
+      "expectSelector": "#equity-chart g[data-dd='band'] path"
+    },
+    {
+      "name": "Grafik equity diterjemahkan ke bahasa Inggris",
+      "path": "/?demo=1&lang=en",
+      "expectText": "Current drawdown"
+    },
+    {
       "name": "Jurnal kosong menjelaskan grafik profit/loss",
       "path": "/",
-      "expectText": "grafik profit/loss kumulatif akan muncul di sini"
+      "expectText": "kurva equity dan bayangan drawdown akan muncul di sini"
     },
     {
       "name": "Rekap per kategori tampil",
