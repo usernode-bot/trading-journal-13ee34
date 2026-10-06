@@ -5,6 +5,11 @@
   },
   "tests": [
     {
+      "name": "Jurnal header has the overflow menu",
+      "path": "/#/jurnal",
+      "expectSelector": "#more-btn[aria-haspopup='menu']"
+    },
+    {
       "id": "home.logo",
       "name": "Header shows the app logo",
       "path": "/",
