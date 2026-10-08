@@ -63,7 +63,7 @@
     try { post('info', ['[dev-console ready]'], { kind: 'ready' }); } catch (_) {}
   })();
   </script>
-  <title>Trading journal</title>
+  <title>Jurnal trading</title>
   <link rel="icon" type="image/svg+xml" href="/logo.svg">
   <!-- Sora with a system-ui fallback (tailwind.config.js fontFamily.sans). -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -122,7 +122,7 @@
   <main class="max-w-5xl mx-auto px-4 py-6 flex flex-col gap-6" style="padding-top: calc(1.5rem + var(--un-safe-inset-top, env(safe-area-inset-top, 0px))); padding-bottom: calc(1.5rem + var(--chrome-h, 7rem))">
     <header class="flex items-center gap-3 px-1">
       <img src="/logo.svg" alt="" class="w-9 h-9 shrink-0" width="36" height="36">
-      <span class="text-lg font-semibold tracking-tight">Trading journal</span>
+      <span class="text-lg font-semibold tracking-tight" data-i18n="app_name">Jurnal trading</span>
       <label class="ml-auto shrink-0">
         <span class="sr-only" data-i18n="lang">Bahasa</span>
         <select id="lang-select" class="field max-w-44 py-1.5 text-sm" aria-label="Bahasa"></select>
@@ -1045,6 +1045,7 @@
       const l = I18N.LANGS.find(x => x.code === lang) || {};
       document.documentElement.lang = lang;
       document.documentElement.dir = l.rtl ? 'rtl' : 'ltr';
+      document.title = tr('app_name');
     }
     function rerenderAll() {
       applyLangDoc();
