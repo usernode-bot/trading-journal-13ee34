@@ -77,6 +77,16 @@
       "expectText": "✅ Disiplin"
     },
     {
+      "name": "Estimated risk shows a tooltip explaining the formula",
+      "path": "/?demo=1",
+      "expectSelector": "#trade-list span[title*='Hanya perkiraan']"
+    },
+    {
+      "name": "Risk tooltip follows the English override",
+      "path": "/?demo=1&lang=en",
+      "expectSelector": "#trade-list span[title*='Estimate only']"
+    },
+    {
       "name": "Empty journal summary shows dashes",
       "path": "/",
       "expectText": "Ringkasan"

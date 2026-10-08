@@ -1317,7 +1317,10 @@
     }
     function riskCell(c) {
       if (c.risk === null) return '-';
-      return fmtMoney(c.risk) + (c.riskDerived ? '*' : '') + (c.riskPct !== null ? ' (' + fmtPct(c.riskPct) + ')' : '');
+      const text = fmtMoney(c.risk) + (c.riskDerived ? '*' : '') + (c.riskPct !== null ? ' (' + fmtPct(c.riskPct) + ')' : '');
+      // The asterisk marks an estimated risk; hover shows how it was computed.
+      if (c.riskDerived) return '<span title="' + esc(tr('risk_derived_tip')) + '">' + text + '</span>';
+      return text;
     }
 
     // Stats over trades that have a result $. Equity curve runs oldest first
@@ -1832,6 +1835,7 @@
       const t = readForm();
       const c = calc(t);
       $('calc-risk').textContent = c.risk === null ? '-' : fmtMoney(c.risk) + (c.riskDerived ? ' ' + tr('est') : '');
+      $('calc-risk').title = c.riskDerived ? tr('risk_derived_tip') : '';
       $('calc-risk-pct').textContent = fmtPct(c.riskPct);
       $('calc-r').textContent = fmtR(c.r);
       $('calc-planned-rr').textContent = fmtRR(c.plannedRR);
