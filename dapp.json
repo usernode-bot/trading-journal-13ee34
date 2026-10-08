@@ -77,6 +77,16 @@
       "expectText": "✅ Disiplin"
     },
     {
+      "name": "Estimated risk shows the formula tooltip",
+      "path": "/?demo=1",
+      "expectSelector": "#trade-tbody span.decoration-dotted[title]"
+    },
+    {
+      "name": "Risk formula tooltip switches to English",
+      "path": "/?demo=1&lang=en",
+      "expectSelector": "#trade-tbody span[title^='Automatic estimate']"
+    },
+    {
       "name": "Empty journal summary shows dashes",
       "path": "/",
       "expectText": "Ringkasan"

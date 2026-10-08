@@ -1317,7 +1317,10 @@
     }
     function riskCell(c) {
       if (c.risk === null) return '-';
-      return fmtMoney(c.risk) + (c.riskDerived ? '*' : '') + (c.riskPct !== null ? ' (' + fmtPct(c.riskPct) + ')' : '');
+      const txt = fmtMoney(c.risk) + (c.riskDerived ? '*' : '') + (c.riskPct !== null ? ' (' + fmtPct(c.riskPct) + ')' : '');
+      if (!c.riskDerived) return txt;
+      // Estimated risk: point at it to see the formula, like the badge tooltips.
+      return '<span class="cursor-help underline decoration-dotted underline-offset-2" title="' + esc(tr('risk_est_title')) + '">' + txt + '</span>';
     }
 
     // Stats over trades that have a result $. Equity curve runs oldest first
@@ -1831,7 +1834,16 @@
     function updateCalc() {
       const t = readForm();
       const c = calc(t);
-      $('calc-risk').textContent = c.risk === null ? '-' : fmtMoney(c.risk) + (c.riskDerived ? ' ' + tr('est') : '');
+      const cRisk = $('calc-risk');
+      cRisk.textContent = c.risk === null ? '-' : fmtMoney(c.risk) + (c.riskDerived ? ' ' + tr('est') : '');
+      // "(perkiraan)" gets the same formula tooltip as the estimated values in the list.
+      if (c.risk !== null && c.riskDerived) {
+        cRisk.title = tr('risk_est_title');
+        cRisk.classList.add('cursor-help', 'underline', 'decoration-dotted', 'underline-offset-2');
+      } else {
+        cRisk.removeAttribute('title');
+        cRisk.classList.remove('cursor-help', 'underline', 'decoration-dotted', 'underline-offset-2');
+      }
       $('calc-risk-pct').textContent = fmtPct(c.riskPct);
       $('calc-r').textContent = fmtR(c.r);
       $('calc-planned-rr').textContent = fmtRR(c.plannedRR);
