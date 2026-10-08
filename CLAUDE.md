@@ -127,6 +127,9 @@ kripto) and sees auto-calculated risk %, R and RR plus a discipline badge
   found by ticket, or by the fingerprint date + instrument + position +
   entry time + entry price + lot (only when entry price and entry time or
   lot are present).
+- `SAMPLE_TRADES` is client-side only: shown via the empty state ("Lihat
+  contoh data"), never posted to `/api/trades`, and excluded from Profil
+  stats and the daily loss limit (both keep reading `trades`).
 - i18n lives in `public/i18n.js` (`window.TJ_I18N`: 20 languages, Indonesian
   base, `?lang=xx` non-persistent override for tests). Default and fallback
   are `id`; the per-user choice is stored in the `user_prefs` table via

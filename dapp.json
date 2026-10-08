@@ -77,9 +77,10 @@
       "expectText": "✅ Disiplin"
     },
     {
-      "name": "Empty journal summary shows dashes",
+      "name": "Empty journal hides the summary and offers sample data",
       "path": "/",
-      "expectText": "Ringkasan"
+      "expectSelector": "#summary.hidden",
+      "expectText": "Lihat contoh data"
     },
     {
       "id": "journal.summary",
