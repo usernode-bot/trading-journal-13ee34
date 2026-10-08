@@ -159,7 +159,16 @@
       </div>
       <p id="demo-note" data-i18n="l_demo_note" class="hidden px-1 text-sm text-warn">Contoh data staging. Trade ini tidak tersimpan dan tidak bisa diubah.</p>
       <p id="import-note" class="hidden px-1 text-sm text-buy" role="status"></p>
-      <p data-i18n="l_disc_note" class="px-1 text-xs text-muted-2">Disiplin: ✅ jika risiko maksimal 1% modal, RR rencana minimal 1:2 dan trade sesuai plan. ❌ jika salah satunya dilanggar. Risiko bertanda * dihitung otomatis (perkiraan).</p>
+      <div class="flex flex-col gap-1.5 px-1">
+        <!-- Tiga aturan disiplin sebagai chip agar mudah dipindai. -->
+        <div class="flex flex-wrap items-center gap-1.5">
+          <span data-i18n="disc_c_risk" class="inline-flex items-center rounded-full bg-surface-2 px-2.5 py-0.5 text-xs font-medium text-ink-2">Risiko ≤1%</span>
+          <span data-i18n="disc_c_rr" class="inline-flex items-center rounded-full bg-surface-2 px-2.5 py-0.5 text-xs font-medium text-ink-2">RR ≥1:2</span>
+          <span data-i18n="disc_c_plan" class="inline-flex items-center rounded-full bg-surface-2 px-2.5 py-0.5 text-xs font-medium text-ink-2">Sesuai plan</span>
+        </div>
+        <p data-i18n="disc_ok_bad" class="text-xs text-muted-2">✅ semua terpenuhi, ❌ jika salah satu dilanggar.</p>
+        <p data-i18n="disc_star_note" class="text-xs text-muted-2">Risiko bertanda * dihitung otomatis (perkiraan).</p>
+      </div>
 
       <!-- Kartu PNL: angka laba/rugi realized yang menonjol, di atas
            ringkasan lengkap. Muncul hanya saat ada trade yang sudah tutup. -->
