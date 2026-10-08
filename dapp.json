@@ -28,6 +28,12 @@
       "expectText": "Belum ada trade"
     },
     {
+      "id": "i18n.app_name",
+      "name": "Header app name is translated via i18n",
+      "path": "/",
+      "expectSelector": "header span[data-i18n='app_name']"
+    },
+    {
       "name": "Language selector is available",
       "path": "/",
       "expectSelector": "#lang-select"
