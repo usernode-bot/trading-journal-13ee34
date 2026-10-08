@@ -77,9 +77,9 @@
       "expectText": "✅ Disiplin"
     },
     {
-      "name": "Empty journal summary shows dashes",
+      "name": "Ringkasan dengan nol dan strip tersembunyi saat jurnal kosong",
       "path": "/",
-      "expectText": "Ringkasan"
+      "expectSelector": "#summary.hidden"
     },
     {
       "id": "journal.summary",
@@ -216,9 +216,9 @@
       "expectText": "Current drawdown"
     },
     {
-      "name": "Jurnal kosong menjelaskan grafik profit/loss",
+      "name": "Jurnal kosong menawarkan pratinjau contoh data",
       "path": "/",
-      "expectText": "kurva equity dan bayangan drawdown akan muncul di sini"
+      "expectSelector": "#empty-demo-btn"
     },
     {
       "name": "Rekap per kategori tampil",

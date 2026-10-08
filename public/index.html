@@ -157,6 +157,12 @@
         <p id="limit-banner-text" class="font-semibold text-sell"></p>
         <p data-i18n="lim_stop" class="mt-1 text-xs text-sell">Sebaiknya berhenti trading hari ini.</p>
       </div>
+      <!-- Mode contoh: jurnal dirender dengan data demo di memori (tidak
+           tersimpan). Banner ini menandai bahwa yang tampil bukan data nyata. -->
+      <div id="demo-banner" class="hidden rounded-xl border border-warn/40 bg-warn/10 p-4 text-sm flex items-center justify-between gap-3" role="status">
+        <p data-i18n="l_demo_banner" class="text-warn">Ini contoh data, bukan jurnalmu. Belum ada trade yang tersimpan.</p>
+        <button type="button" id="demo-back-btn" data-i18n="l_demo_back" class="rounded-lg border border-line-2 px-3 py-1.5 text-ink hover:bg-surface-2 whitespace-nowrap">Kembali</button>
+      </div>
       <p id="demo-note" data-i18n="l_demo_note" class="hidden px-1 text-sm text-warn">Contoh data staging. Trade ini tidak tersimpan dan tidak bisa diubah.</p>
       <p id="import-note" class="hidden px-1 text-sm text-buy" role="status"></p>
       <p data-i18n="l_disc_note" class="px-1 text-xs text-muted-2">Disiplin: ✅ jika risiko maksimal 1% modal, RR rencana minimal 1:2 dan trade sesuai plan. ❌ jika salah satunya dilanggar. Risiko bertanda * dihitung otomatis (perkiraan).</p>
@@ -300,10 +306,28 @@
       </div>
 
       <div id="list-empty" class="hidden flex flex-col items-center gap-3 rounded-xl border border-line p-8 text-center">
+        <!-- Ilustrasi dekoratif: kartu dengan candlestick dan kurva equity
+             naik, semua memakai token warna yang sudah ada (currentColor). -->
+        <svg width="120" height="76" viewBox="0 0 120 76" fill="none" aria-hidden="true">
+          <rect x="2" y="2" width="116" height="72" rx="10" class="fill-surface-2"/>
+          <g class="text-accent" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="26" y1="16" x2="26" y2="60"/><rect x="21" y="24" width="10" height="22" rx="2" fill="currentColor" stroke="none"/>
+          </g>
+          <g class="text-sell" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="46" y1="22" x2="46" y2="64"/><rect x="41" y="30" width="10" height="20" rx="2" fill="currentColor" stroke="none"/>
+          </g>
+          <g class="text-accent" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="66" y1="12" x2="66" y2="54"/><rect x="61" y="18" width="10" height="22" rx="2" fill="currentColor" stroke="none"/>
+          </g>
+          <path d="M16 62 L44 52 L64 56 L96 24" class="text-buy" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="96" cy="24" r="9" class="fill-buy" opacity="0.18"/>
+          <path d="M91.5 24 L95 27.5 L101 20.5" class="text-buy" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
         <p data-i18n="l_empty_t" class="font-semibold">Belum ada trade</p>
         <p data-i18n="l_empty_b" class="text-sm text-muted">Catat trade pertamamu untuk melihat risiko, RR dan cek disiplin otomatis.</p>
         <button type="button" id="empty-new-btn" data-i18n="l_empty_new" class="rounded-lg bg-accent hover:bg-accent-hover px-4 py-2 text-sm font-semibold text-on-accent">Catat trade pertama</button>
         <button type="button" id="empty-import-btn" data-i18n="l_empty_imp" class="rounded-lg border border-line-2 px-4 py-2 text-sm text-ink hover:bg-surface-2">Impor dari CSV</button>
+        <button type="button" id="empty-demo-btn" data-i18n="l_empty_demo" class="rounded-lg border border-line-2 px-4 py-2 text-sm text-ink hover:bg-surface-2">Lihat contoh data</button>
       </div>
 
       <!-- Ponsel: daftar -->
@@ -1239,6 +1263,64 @@
     let editingAccountId = null;   // account being edited in the accounts form
     let listState = 'loading';   // last state shown, so a language switch can re-render it
 
+    // ---- Mode contoh ----------------------------------------------------------
+    // Data demo di memori saja: tidak pernah dikirim ke /api/trades dan
+    // hilang saat Kembali, saat aksi apa pun yang mengubah data, atau reload.
+    // Tanggal dihitung relatif terhadap hari ini supaya kalendar dan grafik
+    // equity selalu menampilkan data terkini. Tanggal tanpa capital membuat
+    // badge "Data kurang" pada trade yang masih terbuka.
+    let demoActive = false;
+    function demoDate(daysAgo) {
+      const d = new Date();
+      d.setDate(d.getDate() - daysAgo);
+      return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    }
+    const DEMO_TRADES = [
+      { id: -1, trade_date: demoDate(21), entry_time: '14:05', exit_time: '16:40', instrument: 'EURUSD', category: 'forex', position: 'buy',
+        entry_price: '1.0850', stop_loss: '1.0830', take_profit: '1.0900', exit_price: '1.0900', lot_size: '0.1', capital: '2500',
+        risk_amount: null, setup: 'Breakout', timeframe: 'H1', entry_reason: 'Retest support setelah breakout', emotion: 'tenang',
+        followed_plan: true, mistakes: [], lesson: 'Sabar menunggu retest terbayar', result_amount: '50', account_id: null, checklist: [] },
+      { id: -2, trade_date: demoDate(18), entry_time: '09:15', exit_time: '09:50', instrument: 'XAUUSD', category: 'forex', position: 'sell',
+        entry_price: '2650', stop_loss: '2655', take_profit: '2642.5', exit_price: '2642.5', lot_size: '0.1', capital: '2500',
+        risk_amount: null, setup: 'Fade berita', timeframe: 'M5', entry_reason: 'Ingin balas rugi dari pagi', emotion: 'balas_dendam',
+        followed_plan: false, mistakes: ['melanggar_risiko'], lesson: 'Risiko 2% terlalu besar, RR juga kurang', result_amount: '37.5', account_id: null, checklist: [] },
+      { id: -3, trade_date: demoDate(15), entry_time: '09:15', exit_time: '10:30', instrument: 'BBCA', category: 'saham', position: 'buy',
+        entry_price: '9500', stop_loss: '9300', take_profit: '9800', exit_price: '9350', lot_size: '10', capital: '15000',
+        risk_amount: '300', setup: 'Pullback', timeframe: 'D1', entry_reason: 'Entry sebelum konfirmasi', emotion: 'fomo',
+        followed_plan: false, mistakes: ['entry_terlalu_cepat', 'melanggar_risiko'], lesson: 'Tunggu candle konfirmasi dulu', result_amount: '-150', account_id: null, checklist: [] },
+      { id: -4, trade_date: demoDate(12), entry_time: '20:00', exit_time: '20:45', instrument: 'ETHUSDT', category: 'kripto', position: 'buy',
+        entry_price: '2400', stop_loss: '2350', take_profit: '2550', exit_price: '2350', lot_size: '1', capital: '2000',
+        risk_amount: null, setup: null, timeframe: 'H4', entry_reason: 'Kehabisan kesabaran, buka posisi lagi', emotion: 'serakah',
+        followed_plan: false, mistakes: ['overtrade'], lesson: 'Stop setelah satu trade gagal, jangan menumpuk', result_amount: '-50', account_id: null, checklist: [] },
+      { id: -5, trade_date: demoDate(9), entry_time: '15:30', exit_time: '17:10', instrument: 'EURUSD', category: 'forex', position: 'sell',
+        entry_price: '1.0900', stop_loss: '1.0920', take_profit: '1.0860', exit_price: '1.0860', lot_size: '0.1', capital: '2500',
+        risk_amount: null, setup: 'Range reversal', timeframe: 'H1', entry_reason: 'Harga di batas atas range', emotion: 'tenang',
+        followed_plan: true, mistakes: [], lesson: 'Setup range berjalan sesuai rencana', result_amount: '40', account_id: null, checklist: [] },
+      { id: -6, trade_date: demoDate(6), entry_time: '21:00', exit_time: null, instrument: 'BTCUSDT', category: 'kripto', position: 'sell',
+        entry_price: '62000', stop_loss: '63500', take_profit: '59000', exit_price: null, lot_size: '0.01', capital: null,
+        risk_amount: null, setup: 'Swing', timeframe: 'H4', entry_reason: 'Rejection di resistance mingguan', emotion: 'tenang',
+        followed_plan: true, mistakes: [], lesson: null, result_amount: null, account_id: null, checklist: [] },
+      { id: -7, trade_date: demoDate(4), entry_time: '10:00', exit_time: '14:20', instrument: 'TLKM', category: 'saham', position: 'buy',
+        entry_price: '3200', stop_loss: '3100', take_profit: '3500', exit_price: '3480', lot_size: '10', capital: '25000',
+        risk_amount: '200', setup: 'Breakout', timeframe: 'D1', entry_reason: 'Volume naik saat tembus resistance', emotion: 'tenang',
+        followed_plan: true, mistakes: [], lesson: 'Exit hampir di TP, cukup disiplin', result_amount: '260', account_id: null, checklist: [] },
+      { id: -8, trade_date: demoDate(2), entry_time: '14:05', exit_time: '15:15', instrument: 'EURUSD', category: 'forex', position: 'buy',
+        entry_price: '1.0900', stop_loss: '1.0880', take_profit: '1.0940', exit_price: '1.0880', lot_size: '0.1', capital: '2500',
+        risk_amount: null, setup: 'Pullback', timeframe: 'M15', entry_reason: 'Pullback ke EMA20', emotion: 'tenang',
+        followed_plan: true, mistakes: [], lesson: 'Rugi di dalam plan tetap trade yang baik', result_amount: '-20', account_id: null, checklist: [] },
+    ];
+    function enterDemo() {
+      demoActive = true;
+      trades = DEMO_TRADES.map(t => Object.assign({}, t, { mistakes: t.mistakes.slice(), checklist: t.checklist.slice() }));
+      renderList();
+    }
+    function exitDemo() {
+      if (!demoActive) return;
+      demoActive = false;
+      trades = [];
+      renderList();
+    }
+
     function num(v) {
       if (v === null || v === undefined) return null;
       const s = String(v).trim().replace(',', '.');
@@ -1718,12 +1800,16 @@
 
     function showListState(state) {
       listState = state;
-      $('summary').classList.toggle('hidden', state !== 'list' && state !== 'empty');
+      // Zeros and dashes teach a new user nothing: the summary stays hidden
+      // while the journal is empty, so the invitation card leads instead.
+      $('summary').classList.toggle('hidden', state !== 'list');
       // The PNL card needs closed trades, so it stays hidden on an empty
       // journal where the summary itself shows dashes.
       $('pnl-card').classList.toggle('hidden', (state !== 'list' && state !== 'empty') || !pnlReady);
       $('calc-tool').classList.toggle('hidden', state !== 'list' && state !== 'empty');
-      $('export-btn').classList.toggle('hidden', state !== 'list');
+      // Demo data must never leave the app as if it were the user's journal.
+      $('export-btn').classList.toggle('hidden', state !== 'list' || demoActive);
+      $('demo-banner').classList.toggle('hidden', !demoActive);
       $('list-loading').classList.toggle('hidden', state !== 'loading');
       $('list-error').classList.toggle('hidden', state !== 'error');
       $('list-empty').classList.toggle('hidden', state !== 'empty');
@@ -1775,6 +1861,7 @@
     }
 
     async function loadTrades() {
+      demoActive = false;   // any refetch (save, delete, retry) ends the demo
       showListState('loading');
       try {
         const res = await fetch('/api/trades' + (DEMO ? '?demo=1' : ''), { headers });
@@ -1885,6 +1972,7 @@
     }
 
     function openForm(trade) {
+      exitDemo();   // logging or editing always works on the real journal
       editingId = trade && trade.id ? Number(trade.id) : null;
       const isEdit = editingId !== null;
       if (trade) fillForm(trade);
@@ -1952,7 +2040,7 @@
 
     function onRowActivate(e) {
       const row = e.target.closest('.trade-row');
-      if (!row || DEMO) return;
+      if (!row || DEMO || demoActive) return;
       if (e.type === 'keydown' && e.key !== 'Enter') return;
       const t = trades.find(x => String(x.id) === row.dataset.id);
       if (t) openForm(t);
@@ -1963,6 +2051,8 @@
     }
     $('new-trade-btn').addEventListener('click', () => openForm(null));
     $('empty-new-btn').addEventListener('click', () => openForm(null));
+    $('empty-demo-btn').addEventListener('click', enterDemo);
+    $('demo-back-btn').addEventListener('click', exitDemo);
     $('back-btn').addEventListener('click', () => showView('list'));
     $('retry-btn').addEventListener('click', loadTrades);
     $('quick-btn').addEventListener('click', goQuick);
@@ -2033,6 +2123,7 @@
       return rows.map(r => r.map(csvCell).join(',')).join('\r\n') + '\r\n';
     }
     function openExport() {
+      if (demoActive) return;   // demo rows must not export as the user's journal
       $('export-csv').value = buildCsv(trades);
       $('export-error').classList.add('hidden');
       $('copy-csv-btn').textContent = tr('x_copy');
@@ -2132,10 +2223,12 @@
     // through edit trade.
     const quickForm = $('quick-form');
     function goQuick() {
+      exitDemo();   // quick logging always works on the real journal
       if (location.hash === '#/cepat') routeHash();
       else location.hash = '#/cepat';
     }
     function goAccounts() {
+      exitDemo();
       if (location.hash === '#/akun') routeHash();
       else location.hash = '#/akun';
     }
@@ -2917,6 +3010,7 @@
     }
 
     function openImport() {
+      exitDemo();   // importing must not mix with demo data
       resetImport();
       $('import-note').classList.add('hidden');
       showView('import');
