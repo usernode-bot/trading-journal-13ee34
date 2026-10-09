@@ -28,6 +28,12 @@
       "expectText": "Belum ada trade"
     },
     {
+      "name": "Header title follows the language setting",
+      "path": "/?lang=en",
+      "expectSelector": "header [data-i18n='l_title']",
+      "expectText": "Trading journal"
+    },
+    {
       "name": "Language selector is available",
       "path": "/",
       "expectSelector": "#lang-select"
