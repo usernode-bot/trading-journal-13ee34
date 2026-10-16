@@ -159,7 +159,15 @@
       </div>
       <p id="demo-note" data-i18n="l_demo_note" class="hidden px-1 text-sm text-warn">Contoh data staging. Trade ini tidak tersimpan dan tidak bisa diubah.</p>
       <p id="import-note" class="hidden px-1 text-sm text-buy" role="status"></p>
-      <p data-i18n="l_disc_note" class="px-1 text-xs text-muted-2">Disiplin: ✅ jika risiko maksimal 1% modal, RR rencana minimal 1:2 dan trade sesuai plan. ❌ jika salah satunya dilanggar. Risiko bertanda * dihitung otomatis (perkiraan).</p>
+      <div class="flex flex-col gap-1.5 px-1">
+        <ul class="flex flex-wrap items-center gap-1.5 text-xs" aria-label="Disiplin" data-i18n-aria="h_disc">
+          <li data-i18n="l_disc_label" class="text-muted-2">Disiplin:</li>
+          <li data-i18n="l_disc_risk" class="rounded-full border border-line px-2 py-0.5 text-muted">Risiko ≤1%</li>
+          <li data-i18n="l_disc_rr" class="rounded-full border border-line px-2 py-0.5 text-muted">RR ≥1:2</li>
+          <li data-i18n="l_disc_plan" class="rounded-full border border-line px-2 py-0.5 text-muted">Sesuai plan</li>
+        </ul>
+        <p data-i18n="l_disc_auto" class="text-xs text-muted-2">Risiko bertanda * dihitung otomatis (perkiraan).</p>
+      </div>
 
       <!-- Kartu PNL: angka laba/rugi realized yang menonjol, di atas
            ringkasan lengkap. Muncul hanya saat ada trade yang sudah tutup. -->
