@@ -83,6 +83,16 @@
       "expectText": "✅ Disiplin"
     },
     {
+      "name": "Risiko bertanda * punya tooltip rumus",
+      "path": "/?demo=1",
+      "expectSelector": "span[title^='Risiko diperkirakan otomatis']"
+    },
+    {
+      "name": "Risk tooltip switches to English",
+      "path": "/?demo=1&lang=en",
+      "expectSelector": "span[title^='Risk estimated automatically']"
+    },
+    {
       "name": "Empty journal summary shows dashes",
       "path": "/",
       "expectText": "Ringkasan"

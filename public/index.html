@@ -1325,7 +1325,10 @@
     }
     function riskCell(c) {
       if (c.risk === null) return '-';
-      return fmtMoney(c.risk) + (c.riskDerived ? '*' : '') + (c.riskPct !== null ? ' (' + fmtPct(c.riskPct) + ')' : '');
+      const money = c.riskDerived
+        ? '<span class="cursor-help" title="' + esc(tr('tt_risk_est')) + '">' + fmtMoney(c.risk) + '*</span>'
+        : fmtMoney(c.risk);
+      return money + (c.riskPct !== null ? ' (' + fmtPct(c.riskPct) + ')' : '');
     }
 
     // Stats over trades that have a result $. Equity curve runs oldest first
