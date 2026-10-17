@@ -158,6 +158,12 @@
         <p data-i18n="lim_stop" class="mt-1 text-xs text-sell">Sebaiknya berhenti trading hari ini.</p>
       </div>
       <p id="demo-note" data-i18n="l_demo_note" class="hidden px-1 text-sm text-warn">Contoh data staging. Trade ini tidak tersimpan dan tidak bisa diubah.</p>
+      <!-- Banner data demo: hanya di layar (in-memory), ditata seperti banner
+           batas rugi harian, dalam warna peringatan. -->
+      <div id="sample-banner" class="hidden rounded-xl border border-warn/40 bg-warn/10 p-4 text-sm" role="status">
+        <p data-i18n="l_sample_note" class="text-warn">Ini data demo: contoh trade untuk melihat cara kerja statistik. Tidak tersimpan dan hilang saat kamu mencatat trade pertama.</p>
+        <button type="button" id="sample-clear-btn" data-i18n="l_sample_clear" class="mt-3 rounded-lg border border-line-2 px-3 py-1.5 text-ink hover:bg-surface-2">Hapus data demo</button>
+      </div>
       <p id="import-note" class="hidden px-1 text-sm text-buy" role="status"></p>
       <p data-i18n="l_disc_note" class="px-1 text-xs text-muted-2">Disiplin: ✅ jika risiko maksimal 1% modal, RR rencana minimal 1:2 dan trade sesuai plan. ❌ jika salah satunya dilanggar. Risiko bertanda * dihitung otomatis (perkiraan).</p>
 
@@ -300,10 +306,19 @@
       </div>
 
       <div id="list-empty" class="hidden flex flex-col items-center gap-3 rounded-xl border border-line p-8 text-center">
+        <!-- Ilustrasi: kartu dengan garis naik, hanya warna tema
+             (aksen teal dan abu garis), ikut mode terang/gelap. -->
+        <svg width="112" height="80" viewBox="0 0 112 80" aria-hidden="true" class="text-line-2">
+          <rect x="4" y="4" width="104" height="72" rx="10" fill="none" stroke="currentColor" stroke-width="2"/>
+          <line x1="18" y1="60" x2="94" y2="60" stroke="currentColor" stroke-width="2"/>
+          <polyline points="18,52 36,44 50,48 66,30 80,34 94,18" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="text-accent"/>
+          <circle cx="94" cy="18" r="4" fill="currentColor" class="text-accent"/>
+        </svg>
         <p data-i18n="l_empty_t" class="font-semibold">Belum ada trade</p>
         <p data-i18n="l_empty_b" class="text-sm text-muted">Catat trade pertamamu untuk melihat risiko, RR dan cek disiplin otomatis.</p>
         <button type="button" id="empty-new-btn" data-i18n="l_empty_new" class="rounded-lg bg-accent hover:bg-accent-hover px-4 py-2 text-sm font-semibold text-on-accent">Catat trade pertama</button>
         <button type="button" id="empty-import-btn" data-i18n="l_empty_imp" class="rounded-lg border border-line-2 px-4 py-2 text-sm text-ink hover:bg-surface-2">Impor dari CSV</button>
+        <button type="button" id="empty-demo-btn" data-i18n="l_empty_demo" class="rounded-lg border border-line-2 px-4 py-2 text-sm text-ink hover:bg-surface-2">Muat data demo</button>
       </div>
 
       <!-- Ponsel: daftar -->
@@ -1242,6 +1257,7 @@
     const $ = (id) => document.getElementById(id);
     const form = $('trade-form');
     let trades = [];
+    let sampleOn = false;   // data demo sedang tampil di layar (in-memory)
     let accounts = [];
     let editingId = null;
     let editingAccountId = null;   // account being edited in the accounts form
@@ -1731,7 +1747,8 @@
       // journal where the summary itself shows dashes.
       $('pnl-card').classList.toggle('hidden', (state !== 'list' && state !== 'empty') || !pnlReady);
       $('calc-tool').classList.toggle('hidden', state !== 'list' && state !== 'empty');
-      $('export-btn').classList.toggle('hidden', state !== 'list');
+      // Data demo tidak boleh diekspor sebagai data sungguhan.
+      $('export-btn').classList.toggle('hidden', state !== 'list' || sampleOn);
       $('list-loading').classList.toggle('hidden', state !== 'loading');
       $('list-error').classList.toggle('hidden', state !== 'error');
       $('list-empty').classList.toggle('hidden', state !== 'empty');
@@ -1782,8 +1799,53 @@
       showListState('list');
     }
 
+    // Data demo: enam trade contoh yang hanya ada di memori, tidak pernah
+    // dikirim ke server. Id negatif agar urutan ringkasan tetap benar.
+    // Lot forex 0,04 (bukan 0,05): jarak SL 0,0020 dengan lot 0,05
+    // menghasilkan risiko 1,000000000000001% (noise float) dan badge ❌.
+    function sampleTrades() {
+      const day = (n) => {
+        const d = new Date();
+        d.setDate(d.getDate() - n);
+        return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+      };
+      const base = () => ({
+        account_id: null, risk_amount: null, capital: '1000', demo: true,
+        setup: null, timeframe: null, entry_reason: null, lesson: null,
+        emotion: null, mistakes: [], followed_plan: true, exit_time: null,
+        screenshot_url: null, broker_ref: null,
+      });
+      // Urut terbaru dulu, seperti urutan dari server.
+      return [
+        { id: -6, trade_date: day(1), entry_time: '10:45', instrument: 'ETHUSDT', category: 'kripto', position: 'buy', entry_price: '3000', stop_loss: '2970', take_profit: '3060', exit_price: '2990', lot_size: '0.3', result_amount: '-3', followed_plan: false },
+        { id: -5, trade_date: day(2), entry_time: '14:20', instrument: 'GBPUSD', category: 'forex', position: 'sell', entry_price: '1.2700', stop_loss: '1.2720', take_profit: '1.2670', exit_price: '1.2670', lot_size: '0.04', result_amount: '15' },
+        { id: -4, trade_date: day(4), entry_time: '21:35', instrument: 'AAPL', category: 'saham', position: 'buy', entry_price: '190', stop_loss: '188.5', take_profit: '192.25', exit_price: '188.5', lot_size: '0.1', result_amount: '-15' },
+        { id: -3, trade_date: day(6), entry_time: '09:00', instrument: 'BTCUSDT', category: 'kripto', position: 'buy', entry_price: '60000', stop_loss: '59500', take_profit: '61500', exit_price: '61500', lot_size: '0.02', result_amount: '30' },
+        { id: -2, trade_date: day(8), entry_time: '20:30', instrument: 'XAUUSD', category: 'forex', position: 'sell', entry_price: '2400', stop_loss: '2405', take_profit: '2390', exit_price: '2405', lot_size: '0.02', result_amount: '-10' },
+        { id: -1, trade_date: day(10), entry_time: '15:10', instrument: 'EURUSD', category: 'forex', position: 'buy', entry_price: '1.0850', stop_loss: '1.0830', take_profit: '1.0890', exit_price: '1.0890', lot_size: '0.04', result_amount: '20' },
+      ].map(t => Object.assign(base(), t));
+    }
+
+    function loadSample() {
+      trades = sampleTrades();
+      sampleOn = true;
+      $('sample-banner').classList.remove('hidden');
+      renderList();
+    }
+
+    function clearSample() {
+      trades = [];
+      sampleOn = false;
+      $('sample-banner').classList.add('hidden');
+      renderList();
+    }
+
     async function loadTrades() {
       showListState('loading');
+      // Muatan dari server menggantikan data demo apa pun, sehingga
+      // sampel tidak pernah tercampur dengan trade sungguhan.
+      sampleOn = false;
+      $('sample-banner').classList.add('hidden');
       try {
         const res = await fetch('/api/trades' + (DEMO ? '?demo=1' : ''), { headers });
         if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -1970,7 +2032,7 @@
 
     function onRowActivate(e) {
       const row = e.target.closest('.trade-row');
-      if (!row || DEMO) return;
+      if (!row || DEMO || sampleOn) return;
       if (e.type === 'keydown' && e.key !== 'Enter') return;
       const t = trades.find(x => String(x.id) === row.dataset.id);
       if (t) openForm(t);
@@ -1981,6 +2043,8 @@
     }
     $('new-trade-btn').addEventListener('click', () => openForm(null));
     $('empty-new-btn').addEventListener('click', () => openForm(null));
+    $('empty-demo-btn').addEventListener('click', loadSample);
+    $('sample-clear-btn').addEventListener('click', clearSample);
     $('back-btn').addEventListener('click', () => showView('list'));
     $('retry-btn').addEventListener('click', loadTrades);
     $('quick-btn').addEventListener('click', goQuick);
@@ -3406,14 +3470,17 @@
       renderAvatar(pr.avatar_url);
       // Stats: live from the journal's own summarize(); the discipline rate
       // counts only trades the badge can judge (same rules as the list).
-      const s = summarize(trades);
+      // Data demo tidak dihitung di sini: statistik profil hanya untuk
+      // trade sungguhan.
+      const realTrades = sampleOn ? [] : trades;
+      const s = summarize(realTrades);
       $('pr-total').textContent = s.total ? String(s.total) : '-';
       $('pr-winrate').textContent = fmtPct(s.winRate);
       $('pr-winrate-sub').textContent = s.withResult ? tr('s_win_sub', { n: s.wins, m: s.withResult }) : '';
       $('pr-pl').textContent = fmtMoney(s.totalPL);
       $('pr-pl').className = 'font-mono text-lg ' + resultClass(s.totalPL);
       let known = 0, good = 0;
-      for (const t of trades) {
+      for (const t of realTrades) {
         const c = calc(t);
         if (c.status === 'unknown') continue;
         known++;
@@ -3421,7 +3488,7 @@
       }
       $('pr-disc').textContent = fmtPct(known ? good / known * 100 : null);
       $('pr-disc-sub').textContent = known ? tr('pr_disc_sub', { n: known }) : '';
-      $('profile-stats-note').classList.toggle('hidden', trades.length > 0);
+      $('profile-stats-note').classList.toggle('hidden', realTrades.length > 0);
     }
 
     async function loadProfile() {
