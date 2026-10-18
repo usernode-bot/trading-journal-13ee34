@@ -329,6 +329,17 @@
         <button type="button" id="empty-demo-btn" data-i18n="l_empty_demo" class="rounded-lg border border-line-2 px-4 py-2 text-sm text-ink hover:bg-surface-2">Muat data demo</button>
       </div>
 
+      <!-- Filter hasil daftar: Semua / Untung / Rugi. Hanya menyaring daftar,
+           bukan ringkasan; reset ke Semua saat halaman dimuat ulang. -->
+      <div id="result-filter" role="group" data-i18n-aria="l_filter" aria-label="Filter hasil" class="hidden flex gap-2 px-1">
+        <button type="button" data-result-filter="all" aria-pressed="true" data-i18n="l_f_all" class="rounded-lg border border-accent bg-accent px-4 py-2 text-sm font-semibold text-on-accent hover:bg-accent-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-accent">Semua</button>
+        <button type="button" data-result-filter="win" aria-pressed="false" data-i18n="l_f_win" class="rounded-lg border border-line-2 px-4 py-2 text-sm text-ink hover:bg-surface-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent">Untung</button>
+        <button type="button" data-result-filter="loss" aria-pressed="false" data-i18n="l_f_loss" class="rounded-lg border border-line-2 px-4 py-2 text-sm text-ink hover:bg-surface-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent">Rugi</button>
+      </div>
+
+      <!-- Pesan saat filter hasil tidak cocok dengan trade mana pun -->
+      <p id="list-filter-empty" data-i18n="l_f_none" class="hidden rounded-xl border border-line p-8 text-center text-sm text-muted">Tidak ada trade yang cocok dengan filter ini.</p>
+
       <!-- Ponsel: daftar -->
       <ul id="trade-list" class="hidden md:hidden divide-y divide-line rounded-xl border border-line"></ul>
 
@@ -1270,6 +1281,7 @@
     let editingId = null;
     let editingAccountId = null;   // account being edited in the accounts form
     let listState = 'loading';   // last state shown, so a language switch can re-render it
+    let resultFilter = 'all';   // 'all' | 'win' | 'loss'; hanya memori, reset saat reload
 
     function num(v) {
       if (v === null || v === undefined) return null;
@@ -1763,6 +1775,11 @@
       $('list-loading').classList.toggle('hidden', state !== 'loading');
       $('list-error').classList.toggle('hidden', state !== 'error');
       $('list-empty').classList.toggle('hidden', state !== 'empty');
+      // Filter hasil hanya tampil di atas daftar yang terisi.
+      $('result-filter').classList.toggle('hidden', state !== 'list');
+      // Pesan "tidak cocok" selalu disembunyikan di sini; renderList()
+      // menampilkannya lagi bila filter tidak cocok dengan trade mana pun.
+      $('list-filter-empty').classList.add('hidden');
       const has = state === 'list';
       $('trade-list').classList.toggle('hidden', !has);
       $('trade-table-wrap').classList.toggle('hidden', !has);
@@ -1774,7 +1791,12 @@
       renderSummary();
       if (!trades.length) return showListState('empty');
       const rows = trades.map(t => ({ t, c: calc(t) }));
-      $('trade-list').innerHTML = rows.map(({ t, c }) =>
+      // Filter hasil: hanya menyaring baris daftar/tabel, bukan ringkasan.
+      // Trade belum tutup (result null) dan BE (result 0) hanya tampil di Semua.
+      const visible = resultFilter === 'all' ? rows : rows.filter(({ c }) =>
+        c.result !== null && (resultFilter === 'win' ? c.result > 0 : c.result < 0));
+      renderResultFilter();
+      $('trade-list').innerHTML = visible.map(({ t, c }) =>
         '<li><button type="button" data-id="' + t.id + '" class="trade-row w-full text-left px-4 py-3 flex flex-col gap-1.5 hover:bg-surface focus:outline-none focus-visible:bg-surface">' +
           '<div class="flex items-center justify-between gap-2">' +
             '<span class="font-semibold">' + esc(t.instrument) + newsChip(t) + ' <span class="text-sm font-normal">' + positionLabel(t.position) + '</span></span>' +
@@ -1791,7 +1813,7 @@
           '</div>' +
         '</button></li>'
       ).join('');
-      $('trade-tbody').innerHTML = rows.map(({ t, c }) =>
+      $('trade-tbody').innerHTML = visible.map(({ t, c }) =>
         '<tr data-id="' + t.id + '" tabindex="0" class="trade-row cursor-pointer hover:bg-surface focus:outline-none focus-visible:bg-surface">' +
           '<td class="px-3 py-2 whitespace-nowrap">' + esc(fmtDate(t.trade_date)) + '</td>' +
           '<td class="px-3 py-2 whitespace-nowrap font-semibold">' + esc(t.instrument) + newsChip(t) + '</td>' +
@@ -1808,6 +1830,26 @@
         '</tr>'
       ).join('');
       showListState('list');
+      if (!visible.length) {
+        // Filter tidak cocok dengan trade apa pun: sembunyikan daftar dan
+        // tabel, tampilkan pesannya.
+        $('trade-list').classList.add('hidden');
+        $('trade-table-wrap').classList.add('hidden');
+        $('trade-table-wrap').classList.remove('md:block');
+        $('list-filter-empty').classList.remove('hidden');
+      }
+    }
+
+    // Tampilan tombol filter hasil: yang terpilih bergaya tombol aksen
+    // (seperti "Catat trade"), sisanya bergaya tombol garis luar.
+    function renderResultFilter() {
+      const on = 'rounded-lg border border-accent bg-accent px-4 py-2 text-sm font-semibold text-on-accent hover:bg-accent-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-accent';
+      const off = 'rounded-lg border border-line-2 px-4 py-2 text-sm text-ink hover:bg-surface-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent';
+      for (const b of $('result-filter').querySelectorAll('[data-result-filter]')) {
+        const sel = b.dataset.resultFilter === resultFilter;
+        b.className = sel ? on : off;
+        b.setAttribute('aria-pressed', String(sel));
+      }
     }
 
     // Data demo: enam trade contoh yang hanya ada di memori, tidak pernah
@@ -2052,6 +2094,14 @@
       $(id).addEventListener('click', onRowActivate);
       $(id).addEventListener('keydown', onRowActivate);
     }
+    // Filter hasil: satu listener untuk ketiga tombol.
+    $('result-filter').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-result-filter]');
+      if (!b || b.dataset.resultFilter === resultFilter) return;
+      resultFilter = b.dataset.resultFilter;
+      renderResultFilter();
+      renderList();
+    });
     $('new-trade-btn').addEventListener('click', () => openForm(null));
     $('empty-new-btn').addEventListener('click', () => openForm(null));
     $('empty-demo-btn').addEventListener('click', loadSample);
