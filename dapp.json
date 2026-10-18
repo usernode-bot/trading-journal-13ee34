@@ -28,6 +28,11 @@
       "expectText": "Belum ada trade"
     },
     {
+      "name": "Result filter control ships with the journal",
+      "path": "/",
+      "expectSelector": "#result-filter [data-result-filter='all']"
+    },
+    {
       "name": "Header title follows the language setting",
       "path": "/?lang=en",
       "expectSelector": "header [data-i18n='l_title']",
